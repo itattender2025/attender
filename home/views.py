@@ -151,13 +151,18 @@ from collections import defaultdict
 
 # Connect to MongoDB
 def attendance_view(request):
-    subject = "MATH"  # Change dynamically if needed
+      # Change dynamically if needed
     attendance_records = list(students_collection.find({}))
-
+    # views.py
+    all_subjects = ['MATH', 'CA', 'AUTOMATA']
+    
+    subject = request.GET.get('subject')
+    # ... rest of your view logic ...
     students = []
     all_dates = set()
 
     for record in attendance_records:
+
         student_attendance = record.get("attendance", {}).get(subject, {})
 
         # Collect all unique dates
@@ -175,6 +180,7 @@ def attendance_view(request):
         )
 
         students.append({
+            "all_subjects": all_subjects,
             "name": record["name"],
             "roll_number": record["roll_number"],
             "year": record["year"],
@@ -187,10 +193,13 @@ def attendance_view(request):
     return render(
         request,
         "attendance_view.html",
-        {"attendance_data": students, "dates": sorted_dates, "subject": subject},
+        {
+            "all_subjects": all_subjects,
+            "attendance_data": students,
+            "dates": sorted_dates,
+            "subject": subject
+        },
     )
-
-
 
 
 # #########################################################################

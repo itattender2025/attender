@@ -4,83 +4,236 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Subject</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00F0FF;
-            --secondary:rgb(22, 102, 214);
-            --accent:rgb(26, 88, 196);
+            --primary-dark: #00c7d4;
+            --secondary: rgb(22, 102, 214);
+            --accent: rgb(26, 88, 196);
+            --text: rgb(1, 15, 33);
+            --text-light: rgb(29, 79, 179);
             --background: #f0fdf9;
-            --card-bg:rgb(255, 255, 255);
-            --text:rgb(1, 15, 33);
-            --text-light:rgb(29, 79, 179);
-            --border:rgb(8, 150, 232);
+            --card-bg: rgb(255, 255, 255);
+            --border: rgb(8, 150, 232);
             --radius: 16px;
-            --shadow: 0 8px 24px rgba(108, 77, 246, 0.15);
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            font-family: 'Poppins', sans-serif;
         }
-        
+
         body {
             background: var(--background);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding-top: 80px;
             min-height: 100vh;
-            padding: 20px;
-            background-image: radial-gradient(circle at 10% 20%, rgba(108, 77, 246, 0.05) 0%, transparent 20%);
         }
-        
+
+        /* Modern Navbar */
+        .navbar {
+            background: var(--card-bg);
+            box-shadow: 0 4px 30px rgba(0, 150, 232, 0.15);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 0 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .left-nav {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 35px;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .active {
+            color: var(--secondary) !important;
+            font-weight: 600 !important;
+        }
+
+        .active::after {
+            width: 100% !important;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-nav {
+            padding: 10px 24px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 102, 214, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Mobile Menu */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            background: var(--card-bg);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        .mobile-menu a {
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .mobile-menu a:hover {
+            background: rgba(22, 102, 214, 0.1);
+        }
+
+        /* Form Container */
         .container {
             background: var(--card-bg);
             padding: 40px;
             border-radius: var(--radius);
             width: 100%;
             max-width: 500px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 8px 24px rgba(0, 150, 232, 0.15);
             border: 1px solid var(--border);
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin: 40px auto;
         }
-        
+
         .container:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 32px rgba(108, 77, 246, 0.2);
+            box-shadow: 0 12px 32px rgba(0, 150, 232, 0.2);
         }
-        
+
         h2 {
             text-align: center;
             margin-bottom: 30px;
             font-size: 2rem;
-            color: #2978cd;
+            color: var(--secondary);
             font-weight: 700;
             letter-spacing: -0.5px;
-            
         }
-        
+
         form {
             display: flex;
             flex-direction: column;
             gap: 24px;
         }
-        
+
         .form-group {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-        
+
         label {
             font-weight: 600;
             color: var(--text);
             font-size: 0.95rem;
             padding-left: 8px;
         }
-        
+
         select, input[type="date"] {
             padding: 16px;
             border: 2px solid var(--border);
@@ -90,21 +243,21 @@
             background-color: var(--card-bg);
             color: var(--text);
         }
-        
+
         select {
             appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236C4DF6'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231666D6'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 16px center;
             background-size: 20px;
         }
-        
+
         select:focus, input[type="date"]:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(108, 77, 246, 0.2);
+            box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.2);
         }
-        
+
         button {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
@@ -122,7 +275,7 @@
             overflow: hidden;
             z-index: 1;
         }
-        
+
         button::before {
             content: '';
             position: absolute;
@@ -135,23 +288,61 @@
             z-index: -1;
             transition: opacity 0.4s ease;
         }
-        
+
         button:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(108, 77, 246, 0.3);
+            box-shadow: 0 12px 24px rgba(22, 102, 214, 0.3);
         }
-        
+
         button:hover::before {
             opacity: 1;
         }
-        
+
         button:active {
             transform: translateY(2px);
         }
-        
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .navbar {
+                padding: 0 20px;
+                height: 70px;
+            }
+            
+            .nav-links {
+                gap: 25px;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 850px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hamburger {
+                display: block;
+            }
+            
+            .nav-buttons {
+                display: none;
+            }
+            
+            .mobile-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 10px;
+            }
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 32px 24px;
+                margin: 30px 20px;
             }
             
             h2 {
@@ -162,10 +353,53 @@
                 padding: 16px;
             }
         }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 24px 20px;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Modern Navbar -->
+    <nav class="navbar">
+        <div class="left-nav">
+            <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
+            
+            <div class="nav-links">
+                <a href="{% url 'index' %}" class="active">Home</a>
+            </div>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="#" class="btn-nav btn-outline">Profile</a>
+            <a href="#" class="btn-nav btn-primary">Logout</a>
+        </div>
+        
+        <div class="hamburger">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 6H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 18H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </nav>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="{% url 'index' %}" class="active">Home</a>
+        <div class="mobile-buttons">
+            <a href="#" class="btn-nav btn-outline">Profile</a>
+            <a href="#" class="btn-nav btn-primary">Logout</a>
+        </div>
+    </div>
+
+    <!-- Form Container -->
     <div class="container">
         <h2>Select Subject & Year</h2>
         <form method="POST" action="{% url 'mark_attendance' %}">
@@ -202,5 +436,22 @@
             </button>
         </form>
     </div>
+
+    <script>
+        // Mobile menu toggle
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.navbar') && !e.target.closest('.mobile-menu')) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
