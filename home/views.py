@@ -1,7 +1,7 @@
 from django.http import HttpResponse,request
 from django.shortcuts import render,redirect
 from datetime import datetime
-from .models import Student
+from .models import Student,User
 
 from datetime import datetime
 from django.http import HttpResponse
@@ -275,3 +275,71 @@ def view_analytics(request):
         })
 
     return render(request, 'analytics.html', {"students": processed_students})
+
+
+
+
+
+
+
+# #for login and registration
+
+from django.contrib import messages
+from django.contrib.auth import logout as django_logout
+def signup(request):
+    if request.method == "POST":
+        name = request.POST["name"]
+        email = request.POST["email"]
+        password = request.POST["password"]
+        
+        # 🔹 Check if user already exists
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "⚠️ Email already registered!")
+            return redirect("signup")
+        
+        user = User(name=name, email=email)
+        user.set_password(password)  # Hash the password
+        user.save()
+        
+        messages.success(request, "✅ Signup successful! Please login.")
+        return redirect("login")
+    
+    return render(request, "signup.html")
+
+
+# ✅ LOGIN VIEW
+def login(request):
+    if request.method == "POST":
+        email = request.POST["email"]
+        password = request.POST["password"]
+        
+        try:
+            user = User.objects.get(email=email)
+            if user.check_password(password):
+                request.session["user_id"] = str(user.id)  # Store user ID in session
+                request.session["user_name"] = user.name
+                messages.success(request, "✅ Login successful!")
+                return redirect("dashboard")  # Redirect to dashboard
+            else:
+                messages.error(request, "❌ Incorrect password!")
+        except User.DoesNotExist:
+            messages.error(request, "❌ User not found!")
+    
+    return render(request, "login.html")
+
+
+# ✅ LOGOUT VIEW
+def logout(request):
+    django_logout(request)
+    request.session.flush()  # Clear session
+    messages.success(request, "✅ You have been logged out!")
+    return redirect("login")
+
+
+def attendance_page(request):
+    if "user_id" not in request.session:
+        messages.error(request, "⚠️ Please login first!")
+        return redirect("login")
+    
+    # ✅ Your attendance logic here...
+    return render(request, "attendance.html", {"user_name": request.session.get("user_name")})
