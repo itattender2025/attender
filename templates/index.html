@@ -3,58 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attender - Home</title>
+    <title>Attender - Dashboard</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #f4f6f9;
-        }
-        .container {
-            text-align: center;
-            background: white;
+            {% comment %} background-image: radial-gradient(#e2e8f0 1px, transparent 1px); {% endcomment %}
+            background: #f0fdf9;
+            background-size: 20px 20px;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
-        h1 {
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.8rem;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .card {
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-top: 4px solid;
+            background: white;
+            backdrop-filter: blur(10px);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+        /* Colorful card accents */
+        .card-featured {
+            border-color: #f59e0b;
+            background: linear-gradient(to bottom right, #fff9ed, white);
+        }
+        .card-analytics {
+            border-color: #3b82f6;
+            background: linear-gradient(to bottom right, #f0f7ff, white);
+        }
+        .card-history {
+            border-color: #10b981;
+            background: linear-gradient(to bottom right, #ecfdf5, white);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 20px;
-            color: #333;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+        .card-subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .featured-tag {
+            background: #f59e0b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 16px;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
             text-decoration: none;
+            transition: all 0.2s;
+            width: 100%;
             text-align: center;
         }
-        .btn-attendance { background: #4CAF50; }
-        .btn-view { background: #007BFF; }
-        .btn-analytics { background: #FF9800; }
-        .btn:hover { opacity: 0.8; }
+        .btn-featured {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-analytics {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-history {
+            background: #10b981;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Attender</h1>
-        <a href="{% url 'take_attendance' %}" class="btn btn-attendance">Take Attendance</a>
-        <a href="{% url 'attendance_view' %}" class="btn btn-view">View Attendance</a>
-        <a href="{% url 'view_analytics' %}" class="btn btn-analytics">View Analytics</a>
-        
+    <div class="header">
+        <h1>Attender Dashboard</h1>
+        <p>Manage attendance with intuitive tools and real-time insights</p>
+    </div>
+
+    <div class="cards-container">
+        <!-- Featured Card -->
+        <div class="card card-featured">
+            <span class="featured-tag">Featured</span>
+            <div class="card-header">
+                <span>5 Active Sessions</span>
+                <span>42 Students</span>
+            </div>
+            <h2 class="card-title">Take Attendance</h2>
+            <p class="card-subtitle">Mark attendance in real-time.</p>
+            <a href="{% url 'take_attendance' %}" class="btn btn-featured">Start Session</a>
+        </div>
+
+        <!-- Analytics Card -->
+        <div class="card card-analytics">
+            <div class="card-header">
+                <span>8 Reports</span>
+                <span>42 Students</span>
+            </div>
+            <h2 class="card-title">View Analytics</h2>
+            <p class="card-subtitle">Visualize attendance trends and generate custom reports.</p>
+            <a href="{% url 'view_analytics' %}" class="btn btn-analytics">View Analytics</a>
+        </div>
+
+        <!-- History Card -->
+        <div class="card card-history">
+            <div class="card-header">
+                <span>12 Classes</span>
+                <span>42 Students</span>
+            </div>
+            <h2 class="card-title">Attendance History</h2>
+            <p class="card-subtitle">Access and export complete attendance records.</p>
+            <a href="{% url 'attendance_view' %}" class="btn btn-history">View Records</a>
+        </div>
     </div>
 </body>
 </html>
