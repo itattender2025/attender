@@ -101,7 +101,7 @@
             <option value="MATH" {% if request.GET.subject == "MATH" %}selected{% endif %}>MATH</option>
             <option value="CA" {% if request.GET.subject == "CA" %}selected{% endif %}>CA</option>
             <option value="AUTOMATA" {% if request.GET.subject == "AUTOMATA" %}selected{% endif %}>AUTOMATA</option>
-            <option value="BIO" {% if request.GET.subject == "BIO" %}selected{% endif %}>BIO</option>
+            {% comment %} <option value="BIO" {% if request.GET.subject == "BIO" %}selected{% endif %}>BIO</option> {% endcomment %}
         </select>
 
         <button type="submit" class="btn">Apply Filter</button>
@@ -114,7 +114,6 @@
             <th>Attendance</th>
             <th>Percentage</th>
             <th>Absent Dates</th>
-            <th>Subject-Wise Attendance</th>
         </tr>
         {% for student in students %}
         <tr>
@@ -131,15 +130,10 @@
                     No absences
                 {% endif %}
             </td>
-            <td>
-                {% for subject, att in student.subject_attendance.items %}
-                    <strong>{{ subject }}</strong>: {{ att }}<br>
-                {% endfor %}
-            </td>
         </tr>
         {% if student.color == 'red' %}
         <tr>
-            <td colspan="6">
+            <td colspan="5">
                 <div class="alert-box">⚠️ Warning: {{ student.name }} has low attendance ({{ student.percentage }})!</div>
             </td>
         </tr>
