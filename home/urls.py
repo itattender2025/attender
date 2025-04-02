@@ -12,8 +12,9 @@ urlpatterns = [
     path('analytics/', views.view_analytics, name='view_analytics'),
     
     path("signup/", views.signup, name="signup"),
-    path("login/", views.login, name="login"),
+      path("login/", views.login_view, name="login"),
     path("logout/", views.logout, name="logout"),
+    
     # 🔥 New route for manual attendance updates
     #path('manual-attendance/', views.manual_attendance_update, name='manual_attendance_update'),
 ]

@@ -455,11 +455,16 @@
                 <a href="#">Home</a>
             </div>
         </div>
-        
-        <div class="nav-buttons">
-            <a href="#" class="btn-nav btn-outline">Profile</a>
-            <a href="#" class="btn-nav btn-primary">Logout</a>
-        </div>
+        {% if user.is_authenticated %}
+        <span>Hi, {{ user.first_name }}</span>  <!-- 👈 Displays the username -->
+        <a href="{% url 'index' %}">Profile</a>
+        <a href="{% url 'logout' %}">Logout</a>
+    {% else %}
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'signup' %}">Signup</a>
+    {% endif %}
+
+
         
         <div class="hamburger">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -472,7 +477,7 @@
     
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
-        <a href="#">Home</a>
+        <a href="{% url 'index' %}">Home</a>
         <div class="mobile-buttons">
             <a href="#" class="btn-nav btn-outline">Profile</a>
             <a href="#" class="btn-nav btn-primary">Logout</a>

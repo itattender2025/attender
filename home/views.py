@@ -28,6 +28,7 @@ from django.shortcuts import render
 from django.utils.dateparse import parse_date
 from .models import Student
 
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -42,12 +43,40 @@ client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.oz
 db = client["attender_db"]
 students_collection = db["student_it_2nd_year"]  # Collection where student records are stored
 
+from django.contrib.auth import authenticate, login, logout
 
+
+
+from django.contrib.auth.models import User
+from django.contrib import messages
+
+def login_view(request):
+    if request.method == "POST":
+        email = request.POST["email"]
+        password = request.POST["password"]
+
+        user = authenticate(request, username=email, password=password)  # Use authenticate properly
+        if user is not None:
+            login(request, user)  # Pass both `request` and `user`
+            request.session["user_name"] = user.first_name  # Store user's first name
+            messages.success(request, "✅ Login successful!")
+            return redirect("index")  # Redirect to the homepage after login
+        else:
+            messages.error(request, "❌ Invalid email or password!")
+
+    return render(request, "login.html")
+
+
+
+#@login_required(login_url="login")
 def index(request):
     return render(request,'index.html')
+
+#@login_required(login_url="login")
 def take_attendance(request):
     return render(request, 'attendance.html')  # Renders the attendance form page
 
+#@login_required(login_url="login")
 def select_subject(request):
     """First Page - Select Subject, Year, and Date"""
     if request.method == "POST":
@@ -64,6 +93,7 @@ def select_subject(request):
 
 
 
+#@login_required(login_url="login")
 def mark_attendance(request):
     if request.method == "POST":
         year = request.POST.get("year")
@@ -211,6 +241,9 @@ def parse_date(date_str):
     except (ValueError, TypeError):
         return None
 
+
+
+#@login_required(login_url="login")
 def view_analytics(request):
     students = Student.objects.all()
 
@@ -295,6 +328,8 @@ def view_analytics(request):
 
 from django.contrib import messages
 from django.contrib.auth import logout as django_logout
+
+
 def signup(request):
     if request.method == "POST":
         name = request.POST["name"]
@@ -317,27 +352,11 @@ def signup(request):
 
 
 # ✅ LOGIN VIEW
-def login(request):
-    if request.method == "POST":
-        email = request.POST["email"]
-        password = request.POST["password"]
-        
-        try:
-            user = User.objects.get(email=email)
-            if user.check_password(password):
-                request.session["user_id"] = str(user.id)  # Store user ID in session
-                request.session["user_name"] = user.name
-                messages.success(request, "✅ Login successful!")
-                return redirect("dashboard")  # Redirect to dashboard
-            else:
-                messages.error(request, "❌ Incorrect password!")
-        except User.DoesNotExist:
-            messages.error(request, "❌ User not found!")
-    
-    return render(request, "login.html")
 
 
 # ✅ LOGOUT VIEW
+
+@login_required(login_url="login")
 def logout(request):
     django_logout(request)
     request.session.flush()  # Clear session
