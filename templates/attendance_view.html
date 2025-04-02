@@ -1,81 +1,440 @@
-{% load home_extras%}
+{% load home_extras %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Attendance Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #00F0FF;
+            --primary-dark: #00c7d4;
+            --secondary: rgb(22, 102, 214);
+            --accent: rgb(26, 88, 196);
+            --text: #1e293b;
+            --text-light: #64748b;
+            --background: #f0fdf9;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --radius: 16px;
+        }
+
         body {
-            background-color: #f8f9fa;
+            background: var(--background);
+            font-family: 'Poppins', sans-serif;
+            padding-top: 80px;
+            min-height: 100vh;
         }
-        .container {
-            background: white;
+
+        /* Modern Navbar */
+        .navbar {
+            background: var(--card-bg);
+            box-shadow: 0 4px 30px rgba(0, 150, 232, 0.15);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 0 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .left-nav {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 35px;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .active {
+            color: var(--secondary) !important;
+            font-weight: 600 !important;
+        }
+
+        .active::after {
+            width: 100% !important;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-nav {
+            padding: 10px 24px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 102, 214, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Mobile Menu */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            background: var(--card-bg);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 15px;
         }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        /* Main Content */
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            width: 95%;
+            max-width: 1200px;
+            margin: 40px auto;
+            box-shadow: 0 8px 24px rgba(0, 150, 232, 0.15);
+            border: 1px solid var(--border);
+        }
+
         h2 {
             text-align: center;
-            margin-bottom: 20px;
-            color: #343a40;
+            margin-bottom: 30px;
+            color: var(--secondary);
+            font-weight: 700;
         }
+
+        .subject-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .subject-selector label {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .subject-selector select {
+            padding: 8px 15px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            min-width: 250px;
+            background: white;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
         table {
-            text-align: center;
-            border-collapse: collapse;
             width: 100%;
-            background-color: white;
+            border-collapse: collapse;
+            background: white;
         }
+
         th, td {
-            padding: 10px;
-            border: 1px solid #dee2e6;
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid var(--border);
         }
-        thead {
-            background-color: #212529;
+
+        th {
+            background-color: var(--secondary);
             color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
         }
-        tbody tr:hover {
-            background-color: #f1f1f1;
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
         }
-        .total-present {
+
+        tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .present {
+            color: #10b981;
             font-weight: bold;
+        }
+
+        .absent {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .total-present {
             background-color: #d1ecf1;
             color: #0c5460;
+            font-weight: bold;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .navbar {
+                padding: 0 20px;
+                height: 70px;
+            }
+            
+            .nav-links {
+                gap: 25px;
+            }
+        }
+
+        @media (max-width: 850px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hamburger {
+                display: block;
+            }
+            
+            .nav-buttons {
+                display: none;
+            }
+            
+            .mobile-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                width: 98%;
+            }
+            
+            .subject-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h2 {
+                font-size: 1.6rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2>Attendance Report - {{ subject }}</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Roll No</th>
-                    <th>Year</th>
-                    {% for date in dates %}
-                        <th>{{ date }}</th>
-                    {% endfor %}
-                    <th>Total Present</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in attendance_data %}
-                <tr>
-                    <td>{{ student.name }}</td>
-                    <td>{{ student.roll_number }}</td>
-                    <td>{{ student.year }}</td>
-                    {% for date in dates %}
-                        <td>{{ student.attendance|get:date|default:"A" }}</td>
-                    {% endfor %}
-                    <td>{{ student.total_present }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <!-- Modern Navbar -->
+    <nav class="navbar">
+        <div class="left-nav">
+            <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
+            
+            <div class="nav-links">
+                <a href="{% url 'index' %}">home</a>
+            </div>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="#" class="btn-nav btn-outline">Profile</a>
+            <a href="#" class="btn-nav btn-primary">Logout</a>
+        </div>
+        
+        <div class="hamburger">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 6H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 18H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </nav>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="{% url 'index' %}">Home</a>
+        <div class="mobile-buttons">
+            <a href="#" class="btn-nav btn-outline">Profile</a>
+            <a href="#" class="btn-nav btn-primary">Logout</a>
+        </div>
     </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h2>Attendance Report</h2>
+        
+        <div class="subject-selector">
+            <label for="subject-select">Select Subject:</label>
+            <select id="subject-select" class="form-select" onchange="location = this.value;">
+                <option value="">-- Select Subject --</option>
+                {% for sub in all_subjects %}
+                    <option value="{% url 'attendance_view' %}?subject={{ sub }}" 
+                            {% if sub == subject %}selected{% endif %}>
+                        {{ sub }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        {% if subject %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Roll No</th>
+                            <th>Year</th>
+                            {% for date in dates %}
+                                <th>{{ date }}</th>
+                            {% endfor %}
+                            <th>Total Present</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in attendance_data %}
+                        <tr>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.year }}</td>
+                            {% for date in dates %}
+                                <td class="{% if student.attendance|get:date == 'P' %}present{% else %}absent{% endif %}">
+                                    {{ student.attendance|get:date|default:"A" }}
+                                </td>
+                            {% endfor %}
+                            <td class="total-present">{{ student.total_present }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                Please select a subject to view attendance records
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.navbar') && !e.target.closest('.mobile-menu')) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
