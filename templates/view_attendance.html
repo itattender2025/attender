@@ -1,0 +1,75 @@
+{% load custom_filters %}  <!-- Load custom template filters -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Attendance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            margin: auto;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            white-space: nowrap;
+            color: white;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #444;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Attendance Sheet</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+                {% for date in dates %}
+                    <th>{{ date }}</th>
+                {% endfor %}
+                <th>Total Present</th>
+                <th>Out of</th>
+            </tr>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.name }}</td>
+                {% for date in dates %}
+                    <td>
+                        {% if student.attendance|get_item:date == 1 %}
+                            ✅
+                        {% else %}
+                            ❌
+                        {% endif %}
+                    </td>
+                {% endfor %}
+                <td>{{ student.attendance.values|sum }}</td>  <!-- Total Present -->
+                <td>{{ dates|length }}</td>  <!-- Total Classes -->
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

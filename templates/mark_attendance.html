@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            margin: auto;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Loader Styles */
+.loader {
+    width: 50px;
+    aspect-ratio: 1;
+    --_c:no-repeat radial-gradient(farthest-side,#25b09b 92%,#0000);
+    background: 
+        var(--_c) top,
+        var(--_c) left,
+        var(--_c) right,
+        var(--_c) bottom;
+    background-size: 12px 12px;
+    animation: l7 1s infinite linear; /* Ensure it rotates */
+}
+
+/* Loader Wrapper */
+.loader-wrapper {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+}
+@keyframes l7 {
+    to { transform: rotate(180deg); } /* Ensure the animation runs */
+}
+
+    </style>
+    <script>
+        function checkAll() {
+            let checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+        }
+
+        function showLoader() {
+            document.querySelector('.loader-wrapper').style.display = 'flex';
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Mark Attendance</h2>
+        <p><strong>Subject:</strong> {{ subject }} | <strong>Year:</strong> {{ year }} | <strong>Date:</strong> {{ date }}</p>
+
+        {% if students %}
+            <form method="POST" action="{% url 'submit_attendance' %}" onsubmit="showLoader()">
+                {% csrf_token %}
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="date" value="{{ date }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                
+                <table>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Present</th>
+                    </tr>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.roll_number }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>
+                            <input type="checkbox" name="present_students" value="{{ student.roll_number }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <button type="button" onclick="checkAll()">Check All</button>
+                <button type="submit">Submit Attendance</button>
+            </form>
+        {% else %}
+            <p style="color: red;">No students found for the selected year.</p>
+        {% endif %}
+    </div>
+
+    <!-- Loader Overlay -->
+    <div class="loader-wrapper">
+        <div class="loader"></div>
+    </div>
+</body>
+</html>

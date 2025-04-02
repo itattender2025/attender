@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Subject</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 50%;
+            margin: auto;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            text-align: left;
+            width: 80%;
+            margin: auto;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        select, input[type="date"], button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Select Subject & Year</h2>
+        <form method="POST" action="{% url 'mark_attendance' %}">
+            {% csrf_token %}
+            <label for="year">Select Year:</label>
+            <select id="year" name="year" required>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+            <label for="subject">Select Subject:</label>
+            <select id="subject" name="subject" required>
+                <option value="MATH">MATH</option>
+                <option value="CA">CA</option>
+                <option value="AUTOMATA">AUTOMATA</option>
+                <option value="BIO.">BIO.</option>
+            </select>
+            <label for="date">Select Date:</label>
+            <input type="date" id="date" name="date" required>
+            <button type="submit">Proceed</button>
+        </form>
+    </div>
+</body>
+</html>

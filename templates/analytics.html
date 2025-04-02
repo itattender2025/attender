@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Analytics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: none; /* Hide content initially */
+        }
+        .loader {
+            width: 50px;
+            aspect-ratio: 1;
+            --_c:no-repeat radial-gradient(farthest-side,#25b09b 92%,#0000);
+            background: 
+                var(--_c) top,
+                var(--_c) left,
+                var(--_c) right,
+                var(--_c) bottom;
+            background-size: 12px 12px;
+            animation: l7 1s infinite;
+            margin: 50px auto;
+        }
+        @keyframes l7 { to { transform: rotate(.5turn); } }
+        .loader-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .color-green { color: green; font-weight: bold; }
+        .color-orange { color: orange; font-weight: bold; }
+        .color-red { color: red; font-weight: bold; }
+        .alert-box {
+            background: #ffcccc;
+            color: red;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="loader-wrapper">
+    <div class="loader"></div>
+</div>
+
+<div class="container">
+    <h2>View Analytics</h2>
+
+    <form method="GET" class="filter-section">
+        <label>Student Name:</label>
+        <input type="text" name="student_name" value="{{ request.GET.student_name }}">
+
+        <label>From:</label>
+        <input type="date" name="start_date" value="{{ request.GET.start_date }}">
+
+        <label>To:</label>
+        <input type="date" name="end_date" value="{{ request.GET.end_date }}">
+
+        <label>Subject:</label>
+        <select name="subject">
+            <option value="">All Subjects</option>
+            <option value="MATH" {% if request.GET.subject == "MATH" %}selected{% endif %}>MATH</option>
+            <option value="CA" {% if request.GET.subject == "CA" %}selected{% endif %}>CA</option>
+            <option value="AUTOMATA" {% if request.GET.subject == "AUTOMATA" %}selected{% endif %}>AUTOMATA</option>
+            <option value="BIO" {% if request.GET.subject == "BIO" %}selected{% endif %}>BIO</option>
+        </select>
+
+        <button type="submit" class="btn">Apply Filter</button>
+    </form>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Roll Number</th>
+            <th>Attendance</th>
+            <th>Percentage</th>
+            <th>Absent Dates</th>
+            <th>Subject-Wise Attendance</th>
+        </tr>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td>{{ student.roll_number }}</td>
+            <td>{{ student.attendance }}</td>
+            <td class="{% if student.color == 'green' %}color-green{% elif student.color == 'orange' %}color-orange{% else %}color-red{% endif %}">
+                {{ student.percentage }}
+            </td>
+            <td>
+                {% if student.absent_dates %}
+                    {{ student.absent_dates|join:", " }}
+                {% else %}
+                    No absences
+                {% endif %}
+            </td>
+            <td>
+                {% for subject, att in student.subject_attendance.items %}
+                    <strong>{{ subject }}</strong>: {{ att }}<br>
+                {% endfor %}
+            </td>
+        </tr>
+        {% if student.color == 'red' %}
+        <tr>
+            <td colspan="6">
+                <div class="alert-box">⚠️ Warning: {{ student.name }} has low attendance ({{ student.percentage }})!</div>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </table>
+</div>
+
+<script>
+    window.addEventListener("load", function() {
+        document.querySelector(".loader-wrapper").style.display = "none";
+        document.querySelector(".container").style.display = "block";
+    });
+</script>
+
+</body>
+</html>
