@@ -248,10 +248,11 @@ def login_view(request):
         user = users.find_one({"email": email})
         if user and check_password(password, user["password"]):
             session_token = secrets.token_hex(32)  # Generate a session token
-            
+            print('user-', user["name"])
             session_data = {
                 "user_id": str(user["_id"]),
                 "email": email,
+                "name": user["name"],
                 "session_token": session_token,
                 "created_at": datetime.now(timezone.utc),
                 "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)

@@ -468,7 +468,7 @@
         </div>
         <div class="nav-buttons">
         {% if user %}
-            <span class="btn-nav">Hi, {{ user.email }}</span>  <!-- 👈 Displays the username -->
+            <span class="btn-nav">Hi, {{ user.name }}</span>  <!-- 👈 Displays the username -->
             <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
         {% else %}
             <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
