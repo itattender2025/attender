@@ -10,11 +10,10 @@ urlpatterns = [
     path('submit-attendance/', views.submit_attendance, name='submit_attendance'),
     path('attendance/', views.attendance_view, name='attendance_view'), 
     path('analytics/', views.view_analytics, name='view_analytics'),
-    
-    path("signup/", views.signup, name="signup"),
-      path("login/", views.login_view, name="login"),
-    path("logout/", views.logout, name="logout"),
-    
-    # 🔥 New route for manual attendance updates
-    #path('manual-attendance/', views.manual_attendance_update, name='manual_attendance_update'),
-]
+     path('signup/', views.signup_view, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
+    path('reset-password/<str:token>/', views.forgot_password_view, name='reset_password'),
+    path('logout/', views.logout_view, name='logout'),
+    path('accounts/', include('allauth.urls')),
+    ]

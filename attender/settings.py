@@ -57,62 +57,6 @@ from requests.auth import HTTPDigestAuth
 from urllib3 import PoolManager
 from requests.adapters import HTTPAdapter
 
-# import requests
-# import ssl
-# from requests.auth import HTTPDigestAuth
-# from urllib3 import PoolManager
-# from requests.adapters import HTTPAdapter
-
-
-# class SSLAdapter(HTTPAdapter):
-#     def init_poolmanager(self, *args, **kwargs):
-#         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-#         context.minimum_version = ssl.TLSVersion.TLSv1_2  # Enforce TLS 1.2+
-#         kwargs['ssl_context'] = context
-#         return super().init_poolmanager(*args, **kwargs)
-
-
-# def get_public_ip():
-#     try:
-#         response = requests.get("https://api.ipify.org", timeout=5)
-#         response.raise_for_status()
-#         return response.text.strip()
-#     except requests.RequestException:
-#         return "127.0.0.1"  # Fallback
-
-
-# # MongoDB Atlas credentials
-# atlas_group_id = "66f86957de0a821439162b09"
-# atlas_api_key_public = "hojzbmzo"
-# atlas_api_key_private = "a6799ea9-5dc6-4b3c-bd73-7ddc5088de56"
-
-# # Get public IP
-# ip = get_public_ip()
-
-# session = requests.Session()
-# session.mount("https://", SSLAdapter())  # Use custom SSL adapter
-
-# try:
-#     # Adding public IP to MongoDB Atlas access list
-#     resp = session.post(
-#         f"https://cloud.mongodb.com/api/atlas/v1.0/groups/{atlas_group_id}/accessList",
-#         auth=HTTPDigestAuth(atlas_api_key_public, atlas_api_key_private),
-#         json=[{'ipAddress': ip, 'comment': 'from Alumner@PythonAnywhere'}],
-#         timeout=10
-#     )
-
-#     if resp.status_code in (200, 201):
-#         print("MongoDB Atlas accessList request successful", flush=True)
-#     else:
-#         print(
-#             f"MongoDB Atlas accessList request problem: status code {resp.status_code}, content {resp.content}",
-#             flush=True
-#         )
-
-# except requests.exceptions.SSLError as e:
-#     print(f"SSL Error: {e}")
-# except requests.exceptions.RequestException as e:
-#     print(f"Request Error: {e}")
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 
@@ -127,6 +71,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'allauth',  
+    'allauth.account', 
+    # 'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -137,6 +85,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'attender.urls'
@@ -180,27 +129,37 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = 'attender.wsgi.application'
 
+import os
+import ssl
+from pymongo import MongoClient
+import urllib.parse
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+# Dummy DATABASES entry (required for Django)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'attender_db',
-        'CLIENT': {
-            'host': f'mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007'
-         ,'tls': True,
-            'tlsAllowInvalidCertificates': True,
-            'tlsCAFile': ssl.get_default_verify_paths().cafile
-        }
+        'ENGINE': 'django.db.backends.sqlite3',  # Dummy SQLite DB (Django requires this)
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # Use SQLite to bypass Django DB check
     }
 }
 
+# Fetch credentials from environment variables
+MONGO_USERNAME = "it24akashmondal"
+MONGO_PASSWORD = "akashmondal@2004"
 
+if not MONGO_USERNAME or not MONGO_PASSWORD:
+    raise ValueError("MongoDB credentials are missing! Set MONGO_USERNAME and MONGO_PASSWORD as environment variables.")
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+# Encode username & password for MongoDB connection
+username = urllib.parse.quote_plus(MONGO_USERNAME)
+password = urllib.parse.quote_plus(MONGO_PASSWORD)
+
+# MongoDB connection string
+MONGO_URI = f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007"
+
+# Connect to MongoDB
+client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True)
+db = client["attender_db"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -242,7 +201,46 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 #my code.....-->
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent  # Correct way to define BASE_DIR
+
+# Fix the static files path
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
-    "/var/www/static/",
+    BASE_DIR / "static",  # Now `BASE_DIR` is a Path object, so "/" works
 ]
+# AUTH_USER_MODEL = 'home.CustomUser'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'allauth.account.auth_backends.AuthenticationBackend', 
+    "home.backends.MongoDBAuthBackend",# for google
+
+]
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': 'http://435911279724-168fv9h4fp7et2ku14fst8ekfkth9p7r.apps.googleusercontent.com',
+            'secret': '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',
+            'key': ''
+        }
+    }
+}
+
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = 'game'
+ACCOUNT_LOGOUT_REDIRECT_URL = 'login'
+
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Store session in DB
+SESSION_COOKIE_AGE = 86400  # 1 day
+SESSION_SAVE_EVERY_REQUEST = True  # Save session after every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after closing browser
+SESSION_COOKIE_SECURE = False  # Make sure HTTPS is not required for local testing
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+SESSION_COOKIE_NAME = "sessionid"  # Default session cookie name

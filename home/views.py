@@ -1,7 +1,7 @@
 from django.http import HttpResponse,request
 from django.shortcuts import render,redirect
 from datetime import datetime
-from .models import Student,User
+from .models import Student
 
 from datetime import datetime
 from django.http import HttpResponse
@@ -30,8 +30,14 @@ from .models import Student
 
 from django.contrib.auth.decorators import login_required
 
-
-
+from django.contrib.auth import authenticate, login, logout
+from .models import CustomUser, PasswordResetRequest
+from django.utils import timezone
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.contrib.auth.hashers import make_password, check_password
 
 
 username = quote_plus("it24akashmondal")
@@ -42,6 +48,8 @@ password = quote_plus("akashmondal@2004")
 client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
 db = client["attender_db"]
 students_collection = db["student_it_2nd_year"]  # Collection where student records are stored
+users_collection = db["home_user"]
+password_reset_collection = db["home_passwordresetrequest"]
 
 from django.contrib.auth import authenticate, login, logout
 
@@ -50,33 +58,269 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 
+
+
+
+
+
+users_collection = db["home_user"]  # Ensure collection name is correct
+
+def signup_view(request):
+    if request.method == 'POST':
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "").strip()
+
+        if not (first_name and last_name and email and password):
+            messages.error(request, "⚠️ All fields are required!")
+            return redirect("signup")
+
+        # 🔹 Check if email already exists
+        existing_user = users_collection.find_one({"email": email}, {"_id": 1})
+        if existing_user:
+            messages.error(request, "🚫 Email already registered.")
+            return redirect("signup")
+
+        hashed_password = make_password(password)
+
+        user_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "username": email,
+            "password": hashed_password,
+        }
+
+        # 🔹 Insert user into MongoDB
+        users_collection.insert_one(user_data)
+
+        messages.success(request, "✅ Signup successful! Please log in.")
+        return redirect("login")
+
+    return render(request, 'login.html')
+from django.contrib.auth.hashers import check_password
+
+
+
+
+from django.contrib.auth import login
+from django.contrib.auth.backends import BaseBackend
+from django.contrib.auth.models import User  # Temporary, just for login()
+from bson import ObjectId
+
+class MongoDBAuthBackend(BaseBackend):
+    def authenticate(self, request, email=None, password=None):
+        user = users_collection.find_one({"email": email})
+        if user and check_password(password, user["password"]):
+            # Create a temporary Django user object (not saved in DB)
+            temp_user = User(id=user["_id"], username=user["email"])
+            temp_user.backend = "yourapp.backends.MongoDBAuthBackend"  # Ensure proper backend
+            return temp_user
+        return None
+
+    def get_user(self, user_id):
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if user:
+            return User(id=str(user["_id"]), username=user["email"])
+        return None
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.hashers import check_password  # Use Django's password checker
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.hashers import check_password
+from django.urls import reverse
+
+# def login_view(request):
+#     if request.method == "POST":
+#         email = request.POST.get("email")
+#         password = request.POST.get("password")
+
+#         user = users_collection.find_one({"email": email})
+
+#         if user and check_password(password, user["password"]):
+#             request.session["user_id"] = str(user["_id"])  # Store session
+#             request.session.modified = True
+
+#             # 🔴 DEBUG: Print session to check if it’s stored
+#             print("\n🔵 SESSION DATA AFTER LOGIN:", dict(request.session.items()))
+#             request.session.save()
+#             next_url = request.GET.get("next") or reverse("index")
+#             return redirect(next_url)  # Redirect to index or next page
+#         else:
+#             messages.error(request, "Invalid email or password.")
+#             return redirect("login")
+
+#     return render(request, "login.html")
+
+
+def forgot_password_view(request):
+    if request.method == 'POST':
+        email = request.POST['email']
+        user_data = users_collection.find_one({"email": email})
+
+        if user_data:
+            token = get_random_string(32)
+            password_reset_collection.insert_one({"email": email, "token": token})
+
+            # You need to implement email sending
+            reset_link = f"http://localhost:8000/reset-password/{token}/"
+            print(f"Reset Link: {reset_link}")  # Debugging: Log the reset link
+
+            messages.success(request, "Reset link sent to your email.")
+        else:
+            messages.error(request, "Email not found.")
+
+    return render(request, 'login.html')
+# def logout_view(request):
+#     pass
+from django.shortcuts import render, redirect
+from functools import wraps
+from pymongo import MongoClient
+from datetime import datetime, timedelta
+import secrets
+from django.contrib.auth.hashers import check_password
+
+
+users = db.home_user
+sessions = db.django_session
+
+# 🔹 Custom Authentication Decorator
+from datetime import datetime, timezone
+
+from django.utils.timezone import now  # Django's timezone-aware datetime
+from django.utils.timezone import now  # Use Django's timezone-aware datetime
+
+def custom_login_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        session_token = request.COOKIES.get("session_token")
+        print("🔹 Session Token from Cookie:", session_token)
+
+        if not session_token:
+            print("❌ No session token found, redirecting to login.")
+            return redirect("login")
+
+        session = sessions.find_one({"session_token": session_token})
+
+        if not session:
+            print("❌ Session not found, redirecting to login.")
+            return redirect("login")
+
+        # Ensure session["expires_at"] is timezone-aware
+        session_expires_at = session["expires_at"]
+        
+        if isinstance(session_expires_at, str):  
+            session_expires_at = datetime.fromisoformat(session_expires_at).replace(tzinfo=timezone.utc)
+        elif session_expires_at.tzinfo is None:  
+            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)  
+
+        if session_expires_at < now():  # Compare using timezone-aware `now()`
+            print("❌ Session expired, redirecting to login.")
+            return redirect("login")
+
+        request.user = {"id": session["user_id"], "email": session["email"]}
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+
+
+
+# 🔹 Login View
+# 🔹 Login View
 def login_view(request):
     if request.method == "POST":
-        email = request.POST["email"]
-        password = request.POST["password"]
+        email = request.POST.get("email")
+        password = request.POST.get("password")
 
-        user = authenticate(request, username=email, password=password)  # Use authenticate properly
-        if user is not None:
-            login(request, user)  # Pass both `request` and `user`
-            request.session["user_name"] = user.first_name  # Store user's first name
-            messages.success(request, "✅ Login successful!")
-            return redirect("index")  # Redirect to the homepage after login
+        print("🔍 Full Form Data:", request.POST.dict())  # Debugging
+
+        # Find user in MongoDB
+        user = users.find_one({"email": email})
+
+        if user and check_password(password, user["password"]):
+            session_token = secrets.token_hex(32)  # Generate a session token
+            
+            session_data = {
+                "user_id": str(user["_id"]),
+                "email": email,
+                "session_token": session_token,
+                "created_at": datetime.now(timezone.utc),
+                "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
+            }
+            sessions.insert_one(session_data)
+
+            response = redirect("index")
+
+            print("✅ Session Created:", session_data)
+            print("✅ Setting Cookie:", session_token)
+
+            response.set_cookie(
+                "session_token",
+                session_token,
+                httponly=True,
+                secure=False,  # Use True for HTTPS
+                samesite="Lax",
+                max_age=3600
+            )
+            return response  
         else:
-            messages.error(request, "❌ Invalid email or password!")
+            print("❌ Invalid Login Attempt")
+            return render(request, "login.html", {"error": "Invalid credentials"})
 
     return render(request, "login.html")
 
-
-
-#@login_required(login_url="login")
+# 🔹 Index View (Uses Custom Authentication)
+@custom_login_required
 def index(request):
-    return render(request,'index.html')
+    return render(request, "index.html", {"username": request.user.get("username", "Guest")})
 
-#@login_required(login_url="login")
+# 🔹 Logout View
+def logout_view(request):
+    session_token = request.COOKIES.get("session_token")
+    if session_token:
+        sessions.delete_one({"session_token": session_token})  # Remove from MongoDB
+
+    response = redirect("login")
+    response.delete_cookie("session_token")  # Remove cookie
+    return response
+
+
+
+
+
+# def login_view(request):
+#     if request.method == "POST":
+#         email = request.POST["email"]
+#         password = request.POST["password"]
+
+#         user = authenticate(request, username=email, password=password)  # Use authenticate properly
+#         if user is not None:
+#             login(request, user)  # Pass both `request` and `user`
+#             request.session["user_name"] = user.first_name  # Store user's first name
+#             messages.success(request, "✅ Login successful!")
+#             return redirect("index")  # Redirect to the homepage after login
+#         else:
+#             messages.error(request, "❌ Invalid email or password!")
+
+#     return render(request, "login.html")
+
+
+
 def take_attendance(request):
     return render(request, 'attendance.html')  # Renders the attendance form page
 
-#@login_required(login_url="login")
 def select_subject(request):
     """First Page - Select Subject, Year, and Date"""
     if request.method == "POST":
@@ -93,7 +337,12 @@ def select_subject(request):
 
 
 
-#@login_required(login_url="login")
+
+from django.shortcuts import render
+from django.http import HttpResponse
+from pymongo import MongoClient
+
+
 def mark_attendance(request):
     if request.method == "POST":
         year = request.POST.get("year")
@@ -116,9 +365,11 @@ def mark_attendance(request):
     }
     year = year_map.get(year, year)  # Default to same year if not found
 
-    # Fetch students from MongoDB
-    students = Student.objects.filter(year=str(year))
-    print(f"📌 Found Students: {list(students)}")  # Debugging
+    # Fetch students from MongoDB (Use PyMongo, not Django ORM)
+    students_collection = db[f"student_it_2nd_year"]  # Collection name based on year
+    students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
+
+    print(f"📌 Found Students: {students}")  # Debugging
 
     return render(request, "mark_attendance.html", {
         "students": students,
@@ -130,12 +381,19 @@ def mark_attendance(request):
 
 
 
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from pymongo import MongoClient
+from datetime import datetime
+import urllib.parse
+
 
 @csrf_exempt
 def submit_attendance(request):
     if request.method == "POST":
         try:
-            subject = request.POST.get("subject", "").strip()  # Ensure subject is not empty
+            subject = request.POST.get("subject", "").strip()
             date = request.POST.get("date", "").strip()
             present_students = request.POST.getlist("present_students")
 
@@ -160,12 +418,13 @@ def submit_attendance(request):
                 if ".." in update_path:
                     return HttpResponse(f"❌ Error: Invalid update path '{update_path}'", status=400)
 
+                # 🔹 Use `$set` instead of `$push` (as per new PyMongo best practices)
                 students_collection.update_one(
                     {"_id": student["_id"]},
-                    {"$push": {update_path: status}}  # Use `$push` to append
+                    {"$push": {update_path: status}}
                 )
 
-            return render(request, "index.html", {"show_loader": True})  # Added loader
+            return render(request, "index.html", {"show_loader": True})  # Show loader after update
         except Exception as e:
             return HttpResponse(f"❌ Error: {e}", status=500)
 
@@ -180,6 +439,7 @@ from collections import defaultdict
 
 
 # Connect to MongoDB
+@custom_login_required
 def attendance_view(request):
       # Change dynamically if needed
     attendance_records = list(students_collection.find({}))
@@ -244,20 +504,29 @@ def parse_date(date_str):
 
 
 #@login_required(login_url="login")
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.utils.dateparse import parse_date
+from pymongo import MongoClient
+from datetime import datetime
+import urllib.parse
+
 def view_analytics(request):
-    students = Student.objects.all()
-
-    student_name = request.GET.get('student_name', '')
-    start_date = request.GET.get('start_date', '')
-    end_date = request.GET.get('end_date', '')
-    subject_filter = request.GET.get('subject', '')
-
-    if student_name:
-        students = students.filter(name__icontains=student_name)
+    student_name = request.GET.get('student_name', '').strip()
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    subject_filter = request.GET.get('subject', '').strip()
 
     # Convert start_date and end_date from string to date
     start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
     end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+
+    # 🔹 Fetch students from MongoDB
+    query = {}
+    if student_name:
+        query["name"] = {"$regex": student_name, "$options": "i"}  # Case-insensitive search
+
+    students = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
 
     processed_students = []
 
@@ -265,24 +534,28 @@ def view_analytics(request):
         attendance_records = []
 
         # Extract attendance data from MongoDB
-        if isinstance(student.attendance, dict):
-            for subject, attendance in student.attendance.items():
+        if isinstance(student.get("attendance"), dict):
+            for subject, attendance in student["attendance"].items():
                 if isinstance(attendance, dict):  # Ensure it's a dictionary
                     for date_str, statuses in attendance.items():
-                        # Convert "26-03" to "2025-03-26"
-                        formatted_date_str = f"2025-{date_str[-2:]}-{date_str[:2]}"
-                        parsed_date = parse_date(formatted_date_str)
+                        try:
+                            # Convert "26-03" to "YYYY-MM-DD" dynamically
+                            current_year = datetime.now().year
+                            formatted_date_str = f"{current_year}-{date_str[-2:]}-{date_str[:2]}"
+                            parsed_date = parse_date(formatted_date_str)
 
-                        # Ensure statuses are always a list (to handle multiple entries)
-                        if isinstance(statuses, str):
-                            statuses = [statuses]  # Convert single value to list
+                            # Ensure statuses are always a list (to handle multiple entries)
+                            if isinstance(statuses, str):
+                                statuses = [statuses]  # Convert single value to list
 
-                        for status in statuses:
-                            attendance_records.append({
-                                "date": parsed_date,
-                                "subject": subject,
-                                "status": status
-                            })
+                            for status in statuses:
+                                attendance_records.append({
+                                    "date": parsed_date,
+                                    "subject": subject,
+                                    "status": status
+                                })
+                        except ValueError:
+                            continue  # Skip if date format is incorrect
 
         # Filter attendance by date range
         filtered_attendance = [
@@ -308,8 +581,8 @@ def view_analytics(request):
         absent_dates = [a["date"] for a in filtered_attendance if a["status"] == "A"]
 
         processed_students.append({
-            "name": student.name,
-            "roll_number": student.roll_number,
+            "name": student["name"],
+            "roll_number": student["roll_number"],
             "attendance": f"{attended_classes} / {total_classes}",
             "percentage": f"{attendance_percentage:.2f}%",
             "color": color_class,
@@ -320,54 +593,3 @@ def view_analytics(request):
 
 
 
-
-
-
-
-# #for login and registration
-
-from django.contrib import messages
-from django.contrib.auth import logout as django_logout
-
-
-def signup(request):
-    if request.method == "POST":
-        name = request.POST["name"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        
-        # 🔹 Check if user already exists
-        if User.objects.filter(email=email).exists():
-            messages.error(request, "⚠️ Email already registered!")
-            return redirect("signup")
-        
-        user = User(name=name, email=email)
-        user.set_password(password)  # Hash the password
-        user.save()
-        
-        messages.success(request, "✅ Signup successful! Please login.")
-        return redirect("login")
-    
-    return render(request, "signup.html")
-
-
-# ✅ LOGIN VIEW
-
-
-# ✅ LOGOUT VIEW
-
-@login_required(login_url="login")
-def logout(request):
-    django_logout(request)
-    request.session.flush()  # Clear session
-    messages.success(request, "✅ You have been logged out!")
-    return redirect("login")
-
-
-def attendance_page(request):
-    if "user_id" not in request.session:
-        messages.error(request, "⚠️ Please login first!")
-        return redirect("login")
-    
-    # ✅ Your attendance logic here...
-    return render(request, "attendance.html", {"user_name": request.session.get("user_name")})
