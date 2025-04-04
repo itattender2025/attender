@@ -236,8 +236,6 @@ def custom_login_required(view_func):
 
 
 
-
-# 🔹 Login View
 # 🔹 Login View
 def login_view(request):
     if request.method == "POST":
@@ -248,7 +246,6 @@ def login_view(request):
 
         # Find user in MongoDB
         user = users.find_one({"email": email})
-
         if user and check_password(password, user["password"]):
             session_token = secrets.token_hex(32)  # Generate a session token
             
@@ -433,6 +430,8 @@ def submit_attendance(request):
 #all ok till now
 
 
+
+
 from django.shortcuts import render
 from pymongo import MongoClient
 from collections import defaultdict
@@ -592,4 +591,5 @@ def view_analytics(request):
     return render(request, 'analytics.html', {"students": processed_students})
 
 
-
+def update_data(request):
+    pass

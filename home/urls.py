@@ -16,4 +16,5 @@ urlpatterns = [
     path('reset-password/<str:token>/', views.forgot_password_view, name='reset_password'),
     path('logout/', views.logout_view, name='logout'),
     path('accounts/', include('allauth.urls')),
+    path('upadte-data/', views.update_data, name='update_data'),
     ]

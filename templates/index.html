@@ -317,6 +317,17 @@
             box-shadow: 0 6px 16px rgba(255, 125, 0, 0.25);
         }
 
+        .btn-update {
+            background: rgb(40, 192, 215);
+            color: white;
+        }
+
+        .btn-update:hover {
+            background:rgb(40, 192, 215);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(57, 199, 154, 0.25);
+        }
+
         .btn-analytics {
             background: var(--primary);
             color: white;
@@ -449,23 +460,23 @@
     <!-- Modern Navbar -->
     <nav class="navbar">
         <div class="left-nav">
-            <a href="#" class="logo">Attender<span>+</span></a>
+            <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
             
             <div class="nav-links">
-                <a href="#">Home</a>
+                <a href="{% url 'index' %}">Home</a>
             </div>
         </div>
-        {% if user.is_authenticated %}
-        <span>Hi, {{ user.first_name }}</span>  <!-- 👈 Displays the username -->
-        <a href="{% url 'index' %}">Profile</a>
-        <a href="{% url 'logout' %}">Logout</a>
-    {% else %}
-        <a href="{% url 'login' %}">Login</a>
-        <a href="{% url 'signup' %}">Signup</a>
-    {% endif %}
+        <div class="nav-buttons">
+        {% if user %}
+            <span class="btn-nav">Hi, {{ user.email }}</span>  <!-- 👈 Displays the username -->
+            <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
+            <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
+        {% endif %}
+        </div>
 
 
-        
         <div class="hamburger">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 12H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
@@ -493,7 +504,6 @@
     <div class="cards-container">
         <!-- Featured Card -->
         <div class="card card-featured">
-            <span class="featured-tag">Featured</span>
             <div class="card-header">
                 <span>5 Active Sessions</span>
                 <span>42 Students</span>
@@ -523,6 +533,17 @@
             <h2 class="card-title">Attendance History</h2>
             <p class="card-subtitle">Access complete historical records and export data for record keeping</p>
             <a href="{% url 'attendance_view' %}" class="btn-card btn-history">View Records</a>
+        </div>
+
+        <!-- Featured Card -->
+        <div class="card card-featured" style="border-color:rgb(60, 194, 204); background:linear-gradient(to bottom right, #e8fdf6, var(--card-bg));">
+            <div class="card-header">
+                <span>5 Active Sessions</span>
+                <span>42 Students</span>
+            </div>
+            <h2 class="card-title">Update Student Data</h2>
+            <p class="card-subtitle">Quickly mark attendance for your current class session with multiple options</p>
+            <a href="{% url 'update_data' %}" class="btn-card btn-update">Update</a>
         </div>
     </div>
 
