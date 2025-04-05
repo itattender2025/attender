@@ -1,48 +1,37 @@
-from django.http import HttpResponse,request
-from django.shortcuts import render,redirect
-from datetime import datetime
-from .models import Student
-
-from datetime import datetime
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
-
-from django.views.decorators.csrf import csrf_exempt
-# from django.http import JsonResponse
-from .models import Student, Attendance
-from datetime import datetime
+from django.http import HttpResponse, request
 from django.shortcuts import render, redirect
+from datetime import datetime, date, timedelta
+from .models import Student, Attendance, CustomUser, PasswordResetRequest
 
-from django.views.decorators.csrf import csrf_exempt
-import pymongo
-from urllib.parse import quote_plus
-#Connect to MongoDB
-
-from django.shortcuts import render
-from django.utils.dateparse import parse_date
-from datetime import datetime
-
-from datetime import datetime
-from django.shortcuts import render
-from django.utils.dateparse import parse_date
-from .models import Student
-
-from django.contrib.auth.decorators import login_required
-
-from django.contrib.auth import authenticate, login, logout
-from .models import CustomUser, PasswordResetRequest
-from django.utils import timezone
 from django.contrib import messages
-from django.core.mail import send_mail
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+from django.utils.timezone import now
 from django.conf import settings
+from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.backends import BaseBackend
+from django.urls import reverse
 
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+from urllib.parse import quote_plus
+import urllib.parse
+import secrets
+import pymongo
+from functools import wraps
+
+from datetime import datetime, timezone
+
+
+from .mongo_utils import get_db_connection, get_all_student_collections, create_new_collection
 
 username = quote_plus("it24akashmondal")
 password = quote_plus("akashmondal@2004")
-
 
 
 client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
@@ -51,12 +40,6 @@ students_collection = db["student_it_2nd_year"]  # Collection where student reco
 users_collection = db["home_user"]
 password_reset_collection = db["home_passwordresetrequest"]
 
-from django.contrib.auth import authenticate, login, logout
-
-
-
-from django.contrib.auth.models import User
-from django.contrib import messages
 
 
 
@@ -104,10 +87,6 @@ from django.contrib.auth.hashers import check_password
 
 
 
-from django.contrib.auth import login
-from django.contrib.auth.backends import BaseBackend
-from django.contrib.auth.models import User  # Temporary, just for login()
-from bson import ObjectId
 
 class MongoDBAuthBackend(BaseBackend):
     def authenticate(self, request, email=None, password=None):
@@ -126,20 +105,6 @@ class MongoDBAuthBackend(BaseBackend):
         return None
 
 
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.hashers import check_password  # Use Django's password checker
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-
-
-
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.hashers import check_password
-from django.urls import reverse
 
 
 def forgot_password_view(request):
@@ -162,22 +127,12 @@ def forgot_password_view(request):
     return render(request, 'login.html')
 # def logout_view(request):
 #     pass
-from django.shortcuts import render, redirect
-from functools import wraps
-from pymongo import MongoClient
-from datetime import datetime, timedelta
-import secrets
-from django.contrib.auth.hashers import check_password
 
 
 users = db.home_user
 sessions = db.django_session
 
 # 🔹 Custom Authentication Decorator
-from datetime import datetime, timezone
-
-from django.utils.timezone import now  # Django's timezone-aware datetime
-from django.utils.timezone import now  # Use Django's timezone-aware datetime
 
 def custom_login_required(view_func):
     @wraps(view_func)
@@ -282,208 +237,6 @@ def logout_view(request):
     return response
 
 
-
-
-
-# def login_view(request):
-#     if request.method == "POST":
-#         email = request.POST["email"]
-#         password = request.POST["password"]
-
-#         user = authenticate(request, username=email, password=password)  # Use authenticate properly
-#         if user is not None:
-#             login(request, user)  # Pass both `request` and `user`
-#             request.session["user_name"] = user.first_name  # Store user's first name
-#             messages.success(request, "✅ Login successful!")
-#             return redirect("index")  # Redirect to the homepage after login
-#         else:
-#             messages.error(request, "❌ Invalid email or password!")
-
-#     return render(request, "login.html")
-
-
-
-# def take_attendance(request):
-#     name = request.session.get('name', '').split()
-#     if len(name) > 0:
-#         first_name = name[0]
-#     else:
-#         first_name = "Guest"
-#     return render(request, 'attendance.html', {"username": first_name})  # Renders the attendance form page
-
-# def select_subject(request):
-#     """First Page - Select Subject, Year, and Date"""
-#     if request.method == "POST":
-#         year = request.POST.get("year")
-#         subject = request.POST.get("subject")
-#         date = request.POST.get("date", datetime.today().strftime('%Y-%m-%d'))
-
-#         # Redirect to the attendance marking page with selected values
-#         return redirect(f"/mark-attendance/?year={year}&subject={subject}&date={date}")
-
-#     return render(request, "select_subject.html")
-
-
-
-
-
-
-# from django.shortcuts import render
-# from django.http import HttpResponse
-# from pymongo import MongoClient
-
-
-# def mark_attendance(request):
-#     if request.method == "POST":
-#         year = request.POST.get("year")
-#         subject = request.POST.get("subject")
-#         date = request.POST.get("date")
-#     else:
-#         year = request.GET.get("year")
-#         subject = request.GET.get("subject")
-#         date = request.GET.get("date")
-
-#     if not year or not subject or not date:
-#         return HttpResponse("⚠️ Missing required parameters!", status=400)
-
-#     # Convert year for MongoDB
-#     year_map = {
-#         "1st Year": "1",
-#         "2nd Year": "2",
-#         "3rd Year": "3",
-#         "4th Year": "4",
-#     }
-#     year = year_map.get(year, year)  # Default to same year if not found
-
-#     # Fetch students from MongoDB (Use PyMongo, not Django ORM)
-#     students_collection = db[f"student_it_2nd_year"]  # Collection name based on year
-#     students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
-
-#     print(f"📌 Found Students: {students}")  # Debugging
-#     name = request.session.get('name', '').split()
-#     if len(name) > 0:
-#         first_name = name[0]
-#     else:
-#         first_name = "Guest"
-#     return render(request, "mark_attendance.html", {
-#         "students": students,
-#         "subject": subject,
-#         "date": date,
-#         "year": year,
-#         "show_loader": True,  # Optional: Show loading spinner
-#         "username": first_name
-#     })
-from django.shortcuts import render
-from django.http import HttpResponse
-from datetime import datetime
- # adjust to your actual import
-
-# def take_attendance(request):
-#     name = request.session.get('name', '').split()
-#     first_name = name[0] if len(name) > 0 else "Guest"
-
-#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
-
-#     semesters = []
-#     academic_years = []
-
-#     for col in collections:
-#         parts = col.split("_")
-#         for part in parts:
-#             if "sem" in part:
-#                 semesters.append(part.replace("sem", ""))
-#             elif "-" in part:
-#                 academic_years.append(part)
-
-#     semesters = sorted(list(set(semesters)))
-#     academic_years = sorted(list(set(academic_years)))
-
-#     # Get selected sem/year from GET
-#     selected_sem = request.GET.get("sem")
-#     selected_year = request.GET.get("year")
-
-#     subject_list = []
-#     if selected_sem and selected_year:
-#         collection_name = f"student_it_{selected_sem}sem_{selected_year}"
-#         if collection_name in collections:
-#             collection = db[collection_name]
-#             for doc in collection.find({}, {"subjects": 1, "_id": 0}):
-#                 if "subjects" in doc:
-#                     subject_list.extend(doc["subjects"].keys())
-#             subject_list = list(set(subject_list))  # remove duplicates
-
-#     return render(request, 'attendance.html', {
-#         "username": first_name,
-#         "collections": collections,
-#         "today": datetime.today().strftime('%Y-%m-%d'),
-#         "subjects": subject_list,
-#         "semesters": semesters,
-#         "years": academic_years,
-#         "selected_sem": selected_sem,
-#         "selected_year": selected_year,
-#     })
-
-
-# def take_attendance(request):
-#     name = request.session.get('name', '').split()
-#     first_name = name[0] if len(name) > 0 else "Guest"
-
-#     # Get all student collections
-#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
-
-#     # Extract unique semesters and academic years
-#     semesters = []
-#     academic_years = []
-    
-#     for col in collections:
-#         parts = col.split("_")
-#         if len(parts) >= 4:  # Ensure format is student_it_[sem]sem_[year]
-#             sem_part = parts[2]
-#             year_part = parts[3]
-            
-#             if "sem" in sem_part:
-#                 semesters.append(sem_part.replace("sem", ""))
-#             if "-" in year_part:
-#                 academic_years.append(year_part)
-
-#     semesters = sorted(list(set(semesters)))
-#     academic_years = sorted(list(set(academic_years)))
-
-#     # Get selected sem/year from request
-#     selected_sem = request.GET.get("sem")
-#     selected_year = request.GET.get("year")
-#     subject_list = []
-
-#     if selected_sem and selected_year:
-#         collection_name = f"student_it_{selected_sem}sem_{selected_year}"
-#         if collection_name in collections:
-#             # Get unique subjects from the collection
-#             pipeline = [
-#                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
-#                 {"$unwind": "$subjects"},
-#                 {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
-#             ]
-#             result = db[collection_name].aggregate(pipeline)
-#             try:
-#                 subject_list = list(result)[0]['subjects']
-#             except (IndexError, KeyError):
-#                 pass
-
-#     return render(request, 'attendance.html', {
-#         "username": first_name,
-#         "collections": collections,
-#         "today": datetime.today().strftime(r'%Y-%m-%d'),
-#         "subjects": sorted(subject_list),  # Return sorted list
-#         "semesters": semesters,
-#         "years": academic_years,
-#         "selected_sem": selected_sem,
-#         "selected_year": selected_year,
-#     })
-
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from datetime import datetime
 
 def take_attendance(request):
     name = request.session.get('name', '').split()
@@ -615,63 +368,11 @@ def mark_attendance(request):
 
 
 
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from pymongo import MongoClient
-from datetime import datetime
-import urllib.parse
-
-
-@csrf_exempt
-def submit_attendance(request):
-    if request.method == "POST":
-        try:
-            subject = request.POST.get("subject", "").strip()
-            date = request.POST.get("date", "").strip()
-            present_students = request.POST.getlist("present_students")
-
-            if not subject:
-                return HttpResponse("⚠️ Subject is missing!", status=400)
-            if not date:
-                return HttpResponse("⚠️ Date is missing!", status=400)
-
-            formatted_date = datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m")
-
-            # Fetch all students from DB
-            all_students = list(students_collection.find({}, {"_id": 1, "roll_number": 1}))
-            if not all_students:
-                return HttpResponse("🚫 No students found!", status=400)
-
-            # ✅ Update attendance for each student
-            for student in all_students:
-                roll_number = str(student.get("roll_number", ""))
-                status = "P" if roll_number in present_students else "A"
-
-                update_path = f"attendance.{subject}.{formatted_date}"
-                if ".." in update_path:
-                    return HttpResponse(f"❌ Error: Invalid update path '{update_path}'", status=400)
-
-                # 🔹 Use `$set` instead of `$push` (as per new PyMongo best practices)
-                students_collection.update_one(
-                    {"_id": student["_id"]},
-                    {"$push": {update_path: status}}
-                )
-
-            return render(request, "index.html", {"show_loader": True})  # Show loader after update
-        except Exception as e:
-            return HttpResponse(f"❌ Error: {e}", status=500)
-
-    return HttpResponse("🚫 Invalid request to submit attendance", status=400)
-
-#all ok till now
 
 
 
 
-from django.shortcuts import render
-from pymongo import MongoClient
-from collections import defaultdict
+
 
 
 # Connect to MongoDB
@@ -743,14 +444,6 @@ def parse_date(date_str):
         return None
 
 
-
-#@login_required(login_url="login")
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.utils.dateparse import parse_date
-from pymongo import MongoClient
-from datetime import datetime
-import urllib.parse
 
 # def view_analytics(request):
 #     student_name = request.GET.get('student_name', '').strip()
@@ -834,8 +527,6 @@ import urllib.parse
 
 from datetime import datetime, date
 
-from datetime import datetime, date
-from django.contrib import messages
 
 @custom_login_required
 def view_analytics(request):
@@ -972,10 +663,6 @@ def view_analytics(request):
 
 
 
-from .mongo_utils import get_db_connection, get_all_student_collections, create_new_collection
-from datetime import datetime
-from django.shortcuts import render, redirect
-from django.contrib import messages
 @custom_login_required
 def promotion_dashboard(request):
     try:
