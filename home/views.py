@@ -753,5 +753,62 @@ def view_analytics(request):
     })
 
 
-def update_data(request):
-    pass
+
+
+from .mongo_utils import get_db_connection, get_all_student_collections, create_new_collection
+from datetime import datetime
+from django.shortcuts import render, redirect
+from django.contrib import messages
+@custom_login_required
+def promotion_dashboard(request):
+    try:
+        
+        collections = get_all_student_collections(db)
+        
+        if request.method == 'POST':
+            source_collection = request.POST.get('source_collection')
+            target_semester = request.POST.get('target_semester')
+            academic_year = request.POST.get('academic_year')
+            num_subjects = int(request.POST.get('num_subjects', 0))
+            
+            if not all([source_collection, target_semester, academic_year, num_subjects > 0]):
+                messages.error(request, "Please fill all required fields")
+                return redirect('promotion_dashboard')
+            
+            subjects = []
+            for i in range(1, num_subjects + 1):
+                subject = request.POST.get(f'subject_{i}')
+                if subject:
+                    subjects.append(subject.strip())
+            
+            if not subjects:
+                messages.error(request, "Please enter at least one subject")
+                return redirect('promotion_dashboard')
+            
+            new_collection_name = f"student_it_{target_semester}sem_{academic_year}"
+            
+            try:
+                student_count = create_new_collection(
+                    db=db,
+                    source_collection=source_collection,
+                    new_collection_name=new_collection_name,
+                    subjects=subjects
+                )
+                messages.success(request, f"Successfully promoted {student_count} students to {new_collection_name}")
+                return render(request, 'promotion_success.html', {
+                    'student_count': student_count,
+                    'new_collection': new_collection_name
+                })
+            
+            except Exception as e:
+                messages.error(request, f"Promotion failed: {str(e)}")
+                return redirect('promotion_dashboard')
+        
+        return render(request, 'promotion_form.html', {
+            'collections': collections,
+            'current_year': datetime.now().year
+        })
+    
+    except Exception as e:
+        messages.error(request, f"System error: {str(e)}")
+        return render(request, 'error.html')
