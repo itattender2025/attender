@@ -286,7 +286,11 @@ def login_view(request):
 # 🔹 Index View (Uses Custom Authentication)
 @custom_login_required
 def index(request):
-    first_name = request.session.get('name', '').split()[0]
+    name = request.session.get('name', '').split()
+    if len(name) > 0:
+        first_name = name[0]
+    else:
+        first_name = "Guest"
     return render(request, "index.html", {"username": first_name})
 
 # 🔹 Logout View
@@ -322,7 +326,11 @@ def logout_view(request):
 
 
 def take_attendance(request):
-    first_name = request.session.get('name', '').split()[0]
+    name = request.session.get('name', '').split()
+    if len(name) > 0:
+        first_name = name[0]
+    else:
+        first_name = "Guest"
     return render(request, 'attendance.html', {"username": first_name})  # Renders the attendance form page
 
 def select_subject(request):
@@ -374,7 +382,11 @@ def mark_attendance(request):
     students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
 
     print(f"📌 Found Students: {students}")  # Debugging
-    first_name = request.session.get('name', '').split()[0]
+    name = request.session.get('name', '').split()
+    if len(name) > 0:
+        first_name = name[0]
+    else:
+        first_name = "Guest"
     return render(request, "mark_attendance.html", {
         "students": students,
         "subject": subject,
@@ -486,7 +498,11 @@ def attendance_view(request):
         })
 
     sorted_dates = sorted(all_dates, key=lambda date: datetime.strptime(date, "%d-%m"))
-    first_name = request.session.get('name', '').split()[0]
+    name = request.session.get('name', '').split()
+    if len(name) > 0:
+        first_name = name[0]
+    else:
+        first_name = "Guest"
     return render(
         request,
         "attendance_view.html",
@@ -719,10 +735,14 @@ def view_analytics(request):
                 student_data[f"{subject.lower()}_percentage"] = percentages.get(subject, 0)
 
         processed_students.append(student_data)
-
+    name = request.session.get('name', '').split()
+    if len(name) > 0:
+        first_name = name[0]
+    else:
+        first_name = "Guest"
     return render(request, 'analytics.html', {
         "students": processed_students,
-        "username": request.session.get('name', '').split()[0],
+        "username": first_name,
         "subject_filter": subject_filter,
         "filters": {
             "student_name": student_name,
