@@ -44,7 +44,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 80px;
+            height: 60px;
         }
 
         .left-nav {
@@ -363,6 +363,86 @@
                 font-size: 1.5rem;
             }
         }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            background: rgba(108, 77, 246, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-profile:hover {
+            background: rgba(108, 77, 246, 0.2);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+
+        .mobile-menu .user-profile {
+            margin-bottom: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .username {
+                max-width: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .user-profile {
+                padding: 6px 12px;
+            }
+            
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+            
+            .username {
+                font-size: 0.95rem;
+                max-width: 80px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .username {
+                display: none;
+            }
+            
+            .mobile-menu .username {
+                display: block;
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -372,31 +452,43 @@
             <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
             
             <div class="nav-links">
-                <a href="{% url 'index' %}" class="active">Home</a>
+                <a href="{% url 'index' %}">Home</a>
             </div>
         </div>
-        
         <div class="nav-buttons">
-            <a href="#" class="btn-nav btn-outline">Profile</a>
-            <a href="#" class="btn-nav btn-primary">Logout</a>
+        {% if user %}
+            <div class="user-profile">
+                <div class="user-avatar">{{ username|first|upper }}</div>
+                <span class="username">{{ username }}</span>
+            </div>
+            <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
+            <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
+        {% endif %}
         </div>
-        
+
         <div class="hamburger">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 12H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 6H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 18H21" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 12H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 6H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 18H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
             </svg>
         </div>
     </nav>
     
     <!-- Mobile Menu -->
+    {% if user %}
     <div class="mobile-menu" id="mobileMenu">
-        <a href="{% url 'index' %}" class="active">Home</a>
-        <div class="mobile-buttons">
-            <a href="#" class="btn-nav btn-outline">Profile</a>
-            <a href="#" class="btn-nav btn-primary">Logout</a>
+        <div class="user-profile">
+            <div class="user-avatar">{{ username|first|upper }}</div>
+            <span class="username">{{ username }}</span>
         </div>
+        <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
+    {% else %}
+        <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
+        <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
+    {% endif %}
     </div>
 
     <!-- Form Container -->

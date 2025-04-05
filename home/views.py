@@ -248,11 +248,9 @@ def login_view(request):
         user = users.find_one({"email": email})
         if user and check_password(password, user["password"]):
             session_token = secrets.token_hex(32)  # Generate a session token
-            print('user-', user["name"])
             session_data = {
                 "user_id": str(user["_id"]),
                 "email": email,
-                "name": user["name"],
                 "session_token": session_token,
                 "created_at": datetime.now(timezone.utc),
                 "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
@@ -272,6 +270,12 @@ def login_view(request):
                 samesite="Lax",
                 max_age=3600
             )
+            response = redirect("index")
+            response.set_cookie("session_token", session_token, httponly=True, max_age=3600)
+            
+            # Store username in Django session as well for easy access
+            request.session['username'] = email
+            request.session['name'] = user.get("name", "")
             return response  
         else:
             print("❌ Invalid Login Attempt")
@@ -282,7 +286,8 @@ def login_view(request):
 # 🔹 Index View (Uses Custom Authentication)
 @custom_login_required
 def index(request):
-    return render(request, "index.html", {"username": request.user.get("username", "Guest")})
+    first_name = request.session.get('name', '').split()[0]
+    return render(request, "index.html", {"username": first_name})
 
 # 🔹 Logout View
 def logout_view(request):
@@ -317,7 +322,8 @@ def logout_view(request):
 
 
 def take_attendance(request):
-    return render(request, 'attendance.html')  # Renders the attendance form page
+    first_name = request.session.get('name', '').split()[0]
+    return render(request, 'attendance.html', {"username": first_name})  # Renders the attendance form page
 
 def select_subject(request):
     """First Page - Select Subject, Year, and Date"""
@@ -368,13 +374,14 @@ def mark_attendance(request):
     students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
 
     print(f"📌 Found Students: {students}")  # Debugging
-
+    first_name = request.session.get('name', '').split()[0]
     return render(request, "mark_attendance.html", {
         "students": students,
         "subject": subject,
         "date": date,
         "year": year,
         "show_loader": True,  # Optional: Show loading spinner
+        "username": first_name
     })
 
 
@@ -471,19 +478,20 @@ def attendance_view(request):
 
         students.append({
             "all_subjects": all_subjects,
-            "name": record["name"],
-            "roll_number": record["roll_number"],
-            "year": record["year"],
+            "name": record.get("name","Unknown"),
+            "roll_number": record.get("roll_number", "Unknown"),
+            "year": record.get("year", "Unknown"),
             "attendance": attendance_data,  # Processed dictionary
             "total_present": total_present,  # Corrected count
         })
 
     sorted_dates = sorted(all_dates, key=lambda date: datetime.strptime(date, "%d-%m"))
-
+    first_name = request.session.get('name', '').split()[0]
     return render(
         request,
         "attendance_view.html",
         {
+            "username": first_name,
             "all_subjects": all_subjects,
             "attendance_data": students,
             "dates": sorted_dates,
@@ -511,85 +519,218 @@ from pymongo import MongoClient
 from datetime import datetime
 import urllib.parse
 
+# def view_analytics(request):
+#     student_name = request.GET.get('student_name', '').strip()
+#     start_date = request.GET.get('start_date', '').strip()
+#     end_date = request.GET.get('end_date', '').strip()
+#     subject_filter = request.GET.get('subject', '').strip()
+
+#     # Convert start_date and end_date from string to date
+#     start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+#     end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+
+#     # 🔹 Fetch students from MongoDB
+#     query = {}
+#     if student_name:
+#         query["name"] = {"$regex": student_name, "$options": "i"}  # Case-insensitive search
+
+#     students = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
+
+#     processed_students = []
+
+#     for student in students:
+#         attendance_records = []
+
+#         # Extract attendance data from MongoDB
+#         if isinstance(student.get("attendance"), dict):
+#             for subject, attendance in student["attendance"].items():
+#                 if isinstance(attendance, dict):  # Ensure it's a dictionary
+#                     for date_str, statuses in attendance.items():
+#                         try:
+#                             # Convert "26-03" to "YYYY-MM-DD" dynamically
+#                             current_year = datetime.now().year
+#                             formatted_date_str = f"{current_year}-{date_str[-2:]}-{date_str[:2]}"
+#                             parsed_date = parse_date(formatted_date_str)
+
+#                             # Ensure statuses are always a list (to handle multiple entries)
+#                             if isinstance(statuses, str):
+#                                 statuses = [statuses]  # Convert single value to list
+
+#                             for status in statuses:
+#                                 attendance_records.append({
+#                                     "date": parsed_date,
+#                                     "subject": subject,
+#                                     "status": status
+#                                 })
+#                         except ValueError:
+#                             continue  # Skip if date format is incorrect
+
+#         # Filter attendance by date range
+#         filtered_attendance = [
+#             a for a in attendance_records
+#             if a["date"] and (start_date is None or start_date <= a["date"] <= end_date)
+#         ]
+
+#         # Apply subject filter if needed
+#         if subject_filter:
+#             filtered_attendance = [a for a in filtered_attendance if a["subject"] == subject_filter]
+
+#         # Count attendance
+#         total_classes = len(filtered_attendance)
+#         attended_classes = sum(1 for a in filtered_attendance if a["status"] == "P")
+
+#         # Calculate attendance percentage
+#         attendance_percentage = (attended_classes / total_classes) * 100 if total_classes > 0 else 0
+
+#         # Color coding
+#         color_class = "green" if attendance_percentage >= 75 else "orange" if attendance_percentage >= 50 else "red"
+
+#         # Track absent dates
+#         absent_dates = [a["date"] for a in filtered_attendance if a["status"] == "A"]
+#         first_name = request.session.get('name', '').split()[0]
+#         processed_students.append({
+#             "name": student.get("name"),
+#             "roll_number": student.get("roll_number"),
+#             "attendance": f"{attended_classes} / {total_classes}",
+#             "percentage": f"{attendance_percentage:.2f}%",
+#             "color": color_class,
+#             "absent_dates": absent_dates,
+#         })
+
+#     return render(request, 'analytics.html', {"students": processed_students, "username": first_name})
+
+from datetime import datetime, date
+
+from datetime import datetime, date
+from django.contrib import messages
+
+@custom_login_required
 def view_analytics(request):
+    # Get all filter parameters
     student_name = request.GET.get('student_name', '').strip()
-    start_date = request.GET.get('start_date', '').strip()
-    end_date = request.GET.get('end_date', '').strip()
-    subject_filter = request.GET.get('subject', '').strip()
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+    subject_filter = request.GET.get('subject', '')
+    min_percentage_str = request.GET.get('min_percentage', '')
 
-    # Convert start_date and end_date from string to date
-    start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
-    end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+    # Initialize filter variables
+    start_date = None
+    end_date = None
+    min_percentage = 0
 
-    # 🔹 Fetch students from MongoDB
+    # Parse dates
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        messages.error(request, "Invalid date format. Please use YYYY-MM-DD.")
+    
+    # Parse minimum percentage
+    try:
+        min_percentage = float(min_percentage_str) if min_percentage_str else 0
+    except ValueError:
+        messages.error(request, "Invalid percentage value.")
+        min_percentage = 0
+
+    # Build MongoDB query
     query = {}
     if student_name:
         query["name"] = {"$regex": student_name, "$options": "i"}  # Case-insensitive search
 
-    students = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
-
+    # Fetch students with filters
+    students_data = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
     processed_students = []
 
-    for student in students:
-        attendance_records = []
+    for student in students_data:
+        subject_stats = {}
+        absent_dates = []
 
-        # Extract attendance data from MongoDB
+        # Initialize only the filtered subject or all subjects if none selected
+        subjects_to_check = [subject_filter] if subject_filter else ["MATH", "CA", "AUTOMATA"]
+        
+        for subject in subjects_to_check:
+            subject_stats[subject] = {"present": 0, "total": 0}
+
         if isinstance(student.get("attendance"), dict):
             for subject, attendance in student["attendance"].items():
-                if isinstance(attendance, dict):  # Ensure it's a dictionary
+                # Skip if we're filtering by subject and this isn't it
+                if subject_filter and subject != subject_filter:
+                    continue
+                    
+                if isinstance(attendance, dict):
                     for date_str, statuses in attendance.items():
                         try:
-                            # Convert "26-03" to "YYYY-MM-DD" dynamically
+                            # Parse date from format "dd-mm" to date object
+                            day, month = map(int, date_str.split('-'))
                             current_year = datetime.now().year
-                            formatted_date_str = f"{current_year}-{date_str[-2:]}-{date_str[:2]}"
-                            parsed_date = parse_date(formatted_date_str)
+                            parsed_date = date(current_year, month, day)
 
-                            # Ensure statuses are always a list (to handle multiple entries)
+                            # Apply date filter
+                            if start_date and parsed_date < start_date:
+                                continue
+                            if end_date and parsed_date > end_date:
+                                continue
+
+                            # Process attendance statuses
                             if isinstance(statuses, str):
-                                statuses = [statuses]  # Convert single value to list
+                                statuses = [statuses]
 
                             for status in statuses:
-                                attendance_records.append({
-                                    "date": parsed_date,
-                                    "subject": subject,
-                                    "status": status
-                                })
-                        except ValueError:
-                            continue  # Skip if date format is incorrect
+                                if subject not in subject_stats:
+                                    subject_stats[subject] = {"present": 0, "total": 0}
+                                subject_stats[subject]["total"] += 1
+                                if status == "P":
+                                    subject_stats[subject]["present"] += 1
+                                else:
+                                    absent_dates.append(parsed_date.strftime("%Y-%m-%d"))
+                        except (ValueError, IndexError):
+                            continue
 
-        # Filter attendance by date range
-        filtered_attendance = [
-            a for a in attendance_records
-            if a["date"] and (start_date is None or start_date <= a["date"] <= end_date)
-        ]
+        # Calculate percentages only for relevant subjects
+        percentages = {}
+        for subject in subjects_to_check:
+            stats = subject_stats.get(subject, {"present": 0, "total": 0})
+            percentages[subject] = (stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0
+        
+        # Calculate overall percentage
+        total_classes = sum(stats["total"] for stats in subject_stats.values())
+        attended_classes = sum(stats["present"] for stats in subject_stats.values())
+        overall_percentage = (attended_classes / total_classes * 100) if total_classes > 0 else 0
 
-        # Apply subject filter if needed
+        # Apply minimum percentage filter
+        if overall_percentage < min_percentage:
+            continue
+
+        # Prepare student data - only include filtered subject if specified
+        student_data = {
+            "name": student.get("name", "Unknown"),
+            "roll_number": student.get("roll_number", "Unknown"),
+            "overall_percentage": overall_percentage,
+            "absent_dates": absent_dates
+        }
+
+        # Add subject percentages
         if subject_filter:
-            filtered_attendance = [a for a in filtered_attendance if a["subject"] == subject_filter]
+            student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
+        else:
+            for subject in ["MATH", "CA", "AUTOMATA"]:
+                student_data[f"{subject.lower()}_percentage"] = percentages.get(subject, 0)
 
-        # Count attendance
-        total_classes = len(filtered_attendance)
-        attended_classes = sum(1 for a in filtered_attendance if a["status"] == "P")
+        processed_students.append(student_data)
 
-        # Calculate attendance percentage
-        attendance_percentage = (attended_classes / total_classes) * 100 if total_classes > 0 else 0
-
-        # Color coding
-        color_class = "green" if attendance_percentage >= 75 else "orange" if attendance_percentage >= 50 else "red"
-
-        # Track absent dates
-        absent_dates = [a["date"] for a in filtered_attendance if a["status"] == "A"]
-
-        processed_students.append({
-            "name": student["name"],
-            "roll_number": student["roll_number"],
-            "attendance": f"{attended_classes} / {total_classes}",
-            "percentage": f"{attendance_percentage:.2f}%",
-            "color": color_class,
-            "absent_dates": absent_dates,
-        })
-
-    return render(request, 'analytics.html', {"students": processed_students})
+    return render(request, 'analytics.html', {
+        "students": processed_students,
+        "username": request.session.get('name', '').split()[0],
+        "subject_filter": subject_filter,
+        "filters": {
+            "student_name": student_name,
+            "start_date": start_date_str,
+            "end_date": end_date_str,
+            "min_percentage": min_percentage_str
+        }
+    })
 
 
 def update_data(request):
