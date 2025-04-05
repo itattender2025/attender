@@ -5,7 +5,7 @@ from home import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('take-attendance/', views.take_attendance, name='take_attendance'),
-    path('select-subject/', views.select_subject, name='select_subject'),
+    # path('select-subject/', views.select_subject, name='select_subject'),
     path('mark-attendance/', views.mark_attendance, name='mark_attendance'),
     path('submit-attendance/', views.submit_attendance, name='submit_attendance'),
     path('attendance/', views.attendance_view, name='attendance_view'), 

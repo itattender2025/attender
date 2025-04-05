@@ -538,20 +538,20 @@
     <!-- Main Content -->
     <div class="container">
         <h2>Mark Attendance</h2>
-        
+    
         <div class="info-bar">
             <div class="info-item"><strong>Subject:</strong> {{ subject }}</div>
             <div class="info-item"><strong>Year:</strong> {{ year }}</div>
             <div class="info-item"><strong>Date:</strong> {{ date }}</div>
         </div>
-
+    
         {% if students %}
-            <form method="POST" action="{% url 'submit_attendance' %}" onsubmit="showLoader()">
+            <form method="POST" onsubmit="showLoader()">
                 {% csrf_token %}
-                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="collection" value="{{ collection }}">
                 <input type="hidden" name="date" value="{{ date }}">
-                <input type="hidden" name="year" value="{{ year }}">
-                
+                <input type="hidden" name="subject" value="{{ subject }}"> 
+    
                 <table>
                     <tr>
                         <th>Roll No</th>
@@ -564,11 +564,12 @@
                         <td>{{ student.name }}</td>
                         <td>
                             <input type="checkbox" name="present_students" value="{{ student.roll_number }}">
+                            <input type="hidden" name="all_students" value="{{ student.roll_number }}">
                         </td>
                     </tr>
                     {% endfor %}
                 </table>
-                
+    
                 <div class="button-group">
                     <button type="button" class="btn btn-secondary" onclick="checkAll()">Check All</button>
                     <button type="submit" class="btn btn-success">Submit Attendance</button>
@@ -578,38 +579,23 @@
             <p class="no-students">No students found for the selected year.</p>
         {% endif %}
     </div>
-
+    
     <!-- Loader Overlay -->
     <div class="loader-wrapper">
         <div class="loader"></div>
     </div>
-
+    
     <script>
-        // Mobile menu toggle
-        const hamburger = document.querySelector('.hamburger');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        hamburger.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-        });
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.navbar') && !e.target.closest('.mobile-menu')) {
-                mobileMenu.classList.remove('active');
-            }
-        });
-
         // Check all checkboxes
         function checkAll() {
-            let checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            let checkboxes = document.querySelectorAll('input[type="checkbox"][name="present_students"]');
             checkboxes.forEach(checkbox => checkbox.checked = true);
         }
-
+    
         // Show loader on form submission
         function showLoader() {
             document.querySelector('.loader-wrapper').style.display = 'flex';
         }
-    </script>
+    </script>    
 </body>
 </html>

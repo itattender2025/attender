@@ -141,28 +141,6 @@ from django.contrib import messages
 from django.contrib.auth.hashers import check_password
 from django.urls import reverse
 
-# def login_view(request):
-#     if request.method == "POST":
-#         email = request.POST.get("email")
-#         password = request.POST.get("password")
-
-#         user = users_collection.find_one({"email": email})
-
-#         if user and check_password(password, user["password"]):
-#             request.session["user_id"] = str(user["_id"])  # Store session
-#             request.session.modified = True
-
-#             # 🔴 DEBUG: Print session to check if it’s stored
-#             print("\n🔵 SESSION DATA AFTER LOGIN:", dict(request.session.items()))
-#             request.session.save()
-#             next_url = request.GET.get("next") or reverse("index")
-#             return redirect(next_url)  # Redirect to index or next page
-#         else:
-#             messages.error(request, "Invalid email or password.")
-#             return redirect("login")
-
-#     return render(request, "login.html")
-
 
 def forgot_password_view(request):
     if request.method == 'POST':
@@ -325,76 +303,315 @@ def logout_view(request):
 
 
 
-def take_attendance(request):
-    name = request.session.get('name', '').split()
-    if len(name) > 0:
-        first_name = name[0]
-    else:
-        first_name = "Guest"
-    return render(request, 'attendance.html', {"username": first_name})  # Renders the attendance form page
+# def take_attendance(request):
+#     name = request.session.get('name', '').split()
+#     if len(name) > 0:
+#         first_name = name[0]
+#     else:
+#         first_name = "Guest"
+#     return render(request, 'attendance.html', {"username": first_name})  # Renders the attendance form page
 
-def select_subject(request):
-    """First Page - Select Subject, Year, and Date"""
-    if request.method == "POST":
-        year = request.POST.get("year")
-        subject = request.POST.get("subject")
-        date = request.POST.get("date", datetime.today().strftime('%Y-%m-%d'))
+# def select_subject(request):
+#     """First Page - Select Subject, Year, and Date"""
+#     if request.method == "POST":
+#         year = request.POST.get("year")
+#         subject = request.POST.get("subject")
+#         date = request.POST.get("date", datetime.today().strftime('%Y-%m-%d'))
 
-        # Redirect to the attendance marking page with selected values
-        return redirect(f"/mark-attendance/?year={year}&subject={subject}&date={date}")
+#         # Redirect to the attendance marking page with selected values
+#         return redirect(f"/mark-attendance/?year={year}&subject={subject}&date={date}")
 
-    return render(request, "select_subject.html")
-
-
+#     return render(request, "select_subject.html")
 
 
 
 
+
+
+# from django.shortcuts import render
+# from django.http import HttpResponse
+# from pymongo import MongoClient
+
+
+# def mark_attendance(request):
+#     if request.method == "POST":
+#         year = request.POST.get("year")
+#         subject = request.POST.get("subject")
+#         date = request.POST.get("date")
+#     else:
+#         year = request.GET.get("year")
+#         subject = request.GET.get("subject")
+#         date = request.GET.get("date")
+
+#     if not year or not subject or not date:
+#         return HttpResponse("⚠️ Missing required parameters!", status=400)
+
+#     # Convert year for MongoDB
+#     year_map = {
+#         "1st Year": "1",
+#         "2nd Year": "2",
+#         "3rd Year": "3",
+#         "4th Year": "4",
+#     }
+#     year = year_map.get(year, year)  # Default to same year if not found
+
+#     # Fetch students from MongoDB (Use PyMongo, not Django ORM)
+#     students_collection = db[f"student_it_2nd_year"]  # Collection name based on year
+#     students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
+
+#     print(f"📌 Found Students: {students}")  # Debugging
+#     name = request.session.get('name', '').split()
+#     if len(name) > 0:
+#         first_name = name[0]
+#     else:
+#         first_name = "Guest"
+#     return render(request, "mark_attendance.html", {
+#         "students": students,
+#         "subject": subject,
+#         "date": date,
+#         "year": year,
+#         "show_loader": True,  # Optional: Show loading spinner
+#         "username": first_name
+#     })
 from django.shortcuts import render
 from django.http import HttpResponse
-from pymongo import MongoClient
+from datetime import datetime
+ # adjust to your actual import
+
+# def take_attendance(request):
+#     name = request.session.get('name', '').split()
+#     first_name = name[0] if len(name) > 0 else "Guest"
+
+#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+
+#     semesters = []
+#     academic_years = []
+
+#     for col in collections:
+#         parts = col.split("_")
+#         for part in parts:
+#             if "sem" in part:
+#                 semesters.append(part.replace("sem", ""))
+#             elif "-" in part:
+#                 academic_years.append(part)
+
+#     semesters = sorted(list(set(semesters)))
+#     academic_years = sorted(list(set(academic_years)))
+
+#     # Get selected sem/year from GET
+#     selected_sem = request.GET.get("sem")
+#     selected_year = request.GET.get("year")
+
+#     subject_list = []
+#     if selected_sem and selected_year:
+#         collection_name = f"student_it_{selected_sem}sem_{selected_year}"
+#         if collection_name in collections:
+#             collection = db[collection_name]
+#             for doc in collection.find({}, {"subjects": 1, "_id": 0}):
+#                 if "subjects" in doc:
+#                     subject_list.extend(doc["subjects"].keys())
+#             subject_list = list(set(subject_list))  # remove duplicates
+
+#     return render(request, 'attendance.html', {
+#         "username": first_name,
+#         "collections": collections,
+#         "today": datetime.today().strftime('%Y-%m-%d'),
+#         "subjects": subject_list,
+#         "semesters": semesters,
+#         "years": academic_years,
+#         "selected_sem": selected_sem,
+#         "selected_year": selected_year,
+#     })
+
+
+# def take_attendance(request):
+#     name = request.session.get('name', '').split()
+#     first_name = name[0] if len(name) > 0 else "Guest"
+
+#     # Get all student collections
+#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+
+#     # Extract unique semesters and academic years
+#     semesters = []
+#     academic_years = []
+    
+#     for col in collections:
+#         parts = col.split("_")
+#         if len(parts) >= 4:  # Ensure format is student_it_[sem]sem_[year]
+#             sem_part = parts[2]
+#             year_part = parts[3]
+            
+#             if "sem" in sem_part:
+#                 semesters.append(sem_part.replace("sem", ""))
+#             if "-" in year_part:
+#                 academic_years.append(year_part)
+
+#     semesters = sorted(list(set(semesters)))
+#     academic_years = sorted(list(set(academic_years)))
+
+#     # Get selected sem/year from request
+#     selected_sem = request.GET.get("sem")
+#     selected_year = request.GET.get("year")
+#     subject_list = []
+
+#     if selected_sem and selected_year:
+#         collection_name = f"student_it_{selected_sem}sem_{selected_year}"
+#         if collection_name in collections:
+#             # Get unique subjects from the collection
+#             pipeline = [
+#                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
+#                 {"$unwind": "$subjects"},
+#                 {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
+#             ]
+#             result = db[collection_name].aggregate(pipeline)
+#             try:
+#                 subject_list = list(result)[0]['subjects']
+#             except (IndexError, KeyError):
+#                 pass
+
+#     return render(request, 'attendance.html', {
+#         "username": first_name,
+#         "collections": collections,
+#         "today": datetime.today().strftime(r'%Y-%m-%d'),
+#         "subjects": sorted(subject_list),  # Return sorted list
+#         "semesters": semesters,
+#         "years": academic_years,
+#         "selected_sem": selected_sem,
+#         "selected_year": selected_year,
+#     })
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+
+def take_attendance(request):
+    name = request.session.get('name', '').split()
+    first_name = name[0] if len(name) > 0 else "Guest"
+
+    # Get all student collections
+    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+
+    semesters = []
+    academic_years = []
+
+    for col in collections:
+        parts = col.split("_")
+        if len(parts) >= 4:
+            sem_part = parts[2]
+            year_part = parts[3]
+
+            if "sem" in sem_part:
+                semesters.append(sem_part.replace("sem", ""))
+            if "-" in year_part:
+                academic_years.append(year_part)
+
+    semesters = sorted(list(set(semesters)))
+    academic_years = sorted(list(set(academic_years)))
+
+    # GET: show attendance.html
+    selected_sem = request.GET.get("sem")
+    selected_year = request.GET.get("year")
+    subject_list = []
+
+    if selected_sem and selected_year:
+        collection_name = f"student_it_{selected_sem}sem_{selected_year}"
+        if collection_name in collections:
+            pipeline = [
+                {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
+                {"$unwind": "$subjects"},
+                {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
+            ]
+            result = db[collection_name].aggregate(pipeline)
+            try:
+                subject_list = list(result)[0]['subjects']
+            except (IndexError, KeyError):
+                pass
+
+    if request.method == "POST":
+        sem = request.POST.get("sem")
+        year = request.POST.get("year")
+        subject = request.POST.get("subject")
+        date = request.POST.get("date")
+
+        if sem and year and subject and date:
+            collection = f"student_it_{sem}sem_{year}"
+            return redirect(f'/mark-attendance/?collection={collection}&subject={subject}&date={date}')
+        
+        else:
+            messages.error(request, "Please fill all required fields")
+
+
+    return render(request, 'attendance.html', {
+        "username": first_name,
+        "collections": collections,
+        "today": datetime.today().strftime('%Y-%m-%d'),
+        "subjects": sorted(subject_list),
+        "semesters": semesters,
+        "years": academic_years,
+        "semester": selected_sem,
+        "year": selected_year,
+    })
 
 
 def mark_attendance(request):
     if request.method == "POST":
-        year = request.POST.get("year")
+        # Saving attendance logic
+        collection_name = request.POST.get("collection")
         subject = request.POST.get("subject")
         date = request.POST.get("date")
-    else:
-        year = request.GET.get("year")
+        all_students = request.POST.getlist("all_students")
+        present_students = request.POST.getlist("present_students")
+        print('all_students:', all_students, 'present_students:', present_students, 'collection_name:', collection_name, 'subject:', subject, 'date:', date, 'request.POST:', request.POST)
+        if not (collection_name and subject and date and all_students):
+            return HttpResponse("Missing required fields in POST request!", status=400)
+
+        try:
+            students_collection = db[collection_name]
+
+            for roll in all_students:
+                status = "P" if roll in present_students else "A"
+                students_collection.update_one(
+                    {"roll_number": roll},
+                    {"$push": {f"subjects.{subject}.{date}": status}}
+                )
+
+            messages.success(request, "Attendance saved successfully!")
+            return redirect("index")
+
+        except Exception as e:
+            return HttpResponse(f"Error saving attendance: {str(e)}", status=500)
+
+    elif request.method == "GET":
+        # Loading the form to mark attendance
+        collection_name = request.GET.get("collection")
         subject = request.GET.get("subject")
         date = request.GET.get("date")
+        if not (collection_name and subject and date):
+            return HttpResponse("Missing required parameters!", status=400)
 
-    if not year or not subject or not date:
-        return HttpResponse("⚠️ Missing required parameters!", status=400)
+        try:
+            students_collection = db[collection_name]
+            students = list(students_collection.find({}, {"_id": 0}))
 
-    # Convert year for MongoDB
-    year_map = {
-        "1st Year": "1",
-        "2nd Year": "2",
-        "3rd Year": "3",
-        "4th Year": "4",
-    }
-    year = year_map.get(year, year)  # Default to same year if not found
+            available_subjects = []
+            if students:
+                available_subjects = list(students[0].get('subjects', {}).keys())
 
-    # Fetch students from MongoDB (Use PyMongo, not Django ORM)
-    students_collection = db[f"student_it_2nd_year"]  # Collection name based on year
-    students = list(students_collection.find({}, {"_id": 0}))  # Exclude MongoDB _id field
+        except Exception as e:
+            return HttpResponse(f"Error fetching students: {str(e)}", status=500)
 
-    print(f"📌 Found Students: {students}")  # Debugging
-    name = request.session.get('name', '').split()
-    if len(name) > 0:
-        first_name = name[0]
-    else:
-        first_name = "Guest"
-    return render(request, "mark_attendance.html", {
-        "students": students,
-        "subject": subject,
-        "date": date,
-        "year": year,
-        "show_loader": True,  # Optional: Show loading spinner
-        "username": first_name
-    })
+        name = request.session.get('name', '').split()
+        first_name = name[0] if len(name) > 0 else "Guest"
+
+        return render(request, "mark_attendance.html", {
+            "students": students,
+            "subject": subject,
+            "date": date,
+            "collection": collection_name,
+            "available_subjects": available_subjects,
+            "username": first_name
+        })
 
 
 

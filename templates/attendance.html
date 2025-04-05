@@ -492,58 +492,120 @@
     </div>
 
     <!-- Form Container -->
+    <!-- Previous head and navbar code remains the same -->
+
     <div class="container">
-        <h2>Select Subject & Year</h2>
-        <form method="POST" action="{% url 'mark_attendance' %}">
+        <h2>Take Attendance</h2>
+        <form id="attendanceForm" method="POST" action="">
             {% csrf_token %}
             <div class="form-group">
                 <label for="year">Academic Year</label>
-                <select id="year" name="year" required>
-                    <option value="" disabled selected>Choose year</option>
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
+                <select id="year" name="year" class="dynamic-select" required>
+                    <option value="">-- Select Year --</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="form-group">
+                <label for="sem">Semester</label>
+                <select id="sem" name="sem" class="dynamic-select" required>
+                    <option value="">-- Select Semester --</option>
+                    {% for sem in semesters %}
+                    <option value="{{ sem }}" {% if selected_sem == sem %}selected{% endif %}>{{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <select id="subject" name="subject" required {% if not subjects %}disabled{% endif %}>
+                    <option value="">-- Select Subject --</option>
+                    {% if subjects %}
+                        {% for subject in subjects %}
+                        <option value="{{ subject }}">{{ subject }}</option>
+                        {% endfor %}
+                    {% endif %}
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="subject">Course Subject</label>
-                <select id="subject" name="subject" required>
-                    <option value="" disabled selected>Select subject</option>
-                    <option value="MATH">Mathematics</option>
-                    <option value="CA">Computer Architecture</option>
-                    <option value="AUTOMATA">Automata Theory</option>
-                    <option value="BIO">Biological Sciences</option>
-                </select>
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
             </div>
             
-            <div class="form-group">
-                <label for="date">Session Date</label>
-                <input type="date" id="date" name="date" required>
-            </div>
-            
-            <button type="submit">
+            <button type="submit" class="btn-primary">
                 Continue to Attendance <span style="margin-left: 8px;">→</span>
             </button>
         </form>
     </div>
-
+    
     <script>
-        // Mobile menu toggle
-        const hamburger = document.querySelector('.hamburger');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        hamburger.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-        });
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.navbar') && !e.target.closest('.mobile-menu')) {
-                mobileMenu.classList.remove('active');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date if not set
+        const dateField = document.getElementById('date');
+        if (dateField && !dateField.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateField.value = today;
+        }
+    
+        // Dynamic subject loading
+        const yearSelect = document.getElementById('year');
+        const semSelect = document.getElementById('sem');
+        const subjectSelect = document.getElementById('subject');
+        const form = document.getElementById('attendanceForm');
+    
+        function loadSubjects() {
+            const year = yearSelect.value;
+            const sem = semSelect.value;
+            
+            if (!year || !sem) {
+                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                subjectSelect.disabled = true;
+                return;
             }
-        });
+    
+            // Show loading state
+            subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+            subjectSelect.disabled = true;
+    
+            // AJAX request to get subjects
+            fetch(`/take-attendance/?sem=${sem}&year=${year}`)
+                .then(response => response.text())
+                .then(html => {
+                    // Create a temporary DOM parser to extract the subjects
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const subjectOptions = doc.querySelectorAll('#subject option');
+                    
+                    // Update subject select
+                    subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                    subjectOptions.forEach(option => {
+                        if (option.value) {  // Skip the default empty option
+                            subjectSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                    
+                    subjectSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading subjects:', error);
+                    subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+                });
+        }
+    
+        // Event listeners for dynamic loading
+        yearSelect.addEventListener('change', loadSubjects);
+        semSelect.addEventListener('change', loadSubjects);
+    
+        // Initial load if year and sem are already selected
+        if (yearSelect.value && semSelect.value) {
+            loadSubjects();
+        }
+    });
     </script>
+
+<!-- Rest of your HTML remains the same -->
 </body>
 </html>

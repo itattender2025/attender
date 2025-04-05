@@ -63,7 +63,7 @@
             white-space: nowrap;
         }
 
-        .logo span {
+        .logo svg {
             color: var(--secondary);
         }
 
@@ -534,13 +534,31 @@
                 max-width: 100%;
             }
         }
+
+        .alert-container {
+            margin-top: -20px;
+        }
+        .alert.success {
+            background-color:rgb(122, 236, 149);
+            color:rgb(226, 237, 228);
+            border: 1px solid #c3e6cb;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+            
     </style>
 </head>
 <body>
     <!-- Modern Navbar -->
     <nav class="navbar">
         <div class="left-nav">
-            <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
+            <a href="{% url 'index' %}" class="logo">Attender<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
+                <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"/>
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+              </svg></a>
+            
             
             <div class="nav-links">
                 <a href="{% url 'index' %}">Home</a>
@@ -581,6 +599,14 @@
         <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
     {% endif %}
     </div>
+
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+            <div class="alert success">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Main Content -->
     <div class="header">
