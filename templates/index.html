@@ -536,16 +536,26 @@
         }
 
         .alert-container {
-            margin-top: -20px;
+            margin-top: -30px;
         }
+
         .alert.success {
-            background-color:rgb(122, 236, 149);
-            color:rgb(226, 237, 228);
+            background-color: #d4edda;
+            color: #155724;
             border: 1px solid #c3e6cb;
             padding: 10px 15px;
             border-radius: 5px;
             font-weight: bold;
             text-align: center;
+            margin: 10px 0;
+            animation: fadeOut 2s ease-in-out 5s forwards; /* Fades out after 4 seconds */
+        }
+    
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
         }
             
     </style>
@@ -601,7 +611,7 @@
     </div>
 
     {% if messages %}
-    <div class="alert-container">
+    <div id="message-container" class="alert-container">
         {% for message in messages %}
             <div class="alert success">{{ message }}</div>
         {% endfor %}
@@ -675,6 +685,7 @@
                 mobileMenu.classList.remove('active');
             }
         });
+
     </script>
 </body>
 </html>

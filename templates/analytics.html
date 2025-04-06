@@ -216,7 +216,6 @@
             background: var(--card-bg);
             border-radius: var(--radius);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 25px;
             margin-bottom: 30px;
         }
 
@@ -549,6 +548,206 @@
                 padding: 24px;
             }
         }
+        
+
+        .modern-analytics-form {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .batch-selection {
+            margin-bottom: 20px;
+            max-width: 300px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #4b5563;
+            font-size: 13px;
+        }
+        
+        .filters-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            flex: 1 0 auto;
+            min-width: 120px;
+            margin-bottom: 0;
+        }
+        
+        .select-wrapper {
+            position: relative;
+        }
+        
+        .select-arrow {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #6b7280;
+            pointer-events: none;
+        }
+        
+        .modern-select {
+            appearance: none;
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background-color: #fff;
+            font-size: 13px;
+            color: #111827;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            height: 36px;
+            margin-bottom: 12px;
+        }
+        
+        .modern-select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .modern-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #111827;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            height: 36px;
+            box-sizing: border-box;
+        }
+        
+        .date-input {
+            min-width: 120px;
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            color: #9ca3af;
+        }
+        
+        .date-range-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range-separator {
+            color: #9ca3af;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            align-self: flex-end;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            height: 36px;
+            white-space: nowrap;
+        }
+        
+        .btn-icon {
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+        }
+        
+        .btn-primary {
+            background-color: #6366f1;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4f46e5;
+        }
+        
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        
+        @media (max-width: 1024px) {
+            .filters-row {
+                gap: 12px;
+            }
+            
+            .form-group {
+                min-width: 100px;
+            }
+            
+            .date-range-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .date-range-separator {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .form-actions {
+                margin-left: 0;
+                justify-content: flex-end;
+            }
+            
+            .batch-selection {
+                max-width: 100%;
+            }
+        }
+        
     </style>
 </head>
 <body>
@@ -605,50 +804,82 @@
         </div>
 
         <div class="filter-card">
-            <form method="GET" action="{% url 'view_analytics' %}">
-                <div class="filter-section">
-                    <div class="filter-group">
-                        <label>Student Name</label>
-                        <input type="text" name="student_name" value="{{ request.GET.student_name }}" placeholder="Search by name">
-                    </div>
-                    <div class="filter-group">
-                        <label>From Date</label>
-                        <input type="date" name="start_date" value="{{ request.GET.start_date }}">
-                    </div>
-                    <div class="filter-group">
-                        <label>To Date</label>
-                        <input type="date" name="end_date" value="{{ request.GET.end_date }}">
-                    </div>
-                    <div class="filter-group">
-                        <label for="subject">Filter by Subject:</label>
-                        <select name="subject" id="subject">
-                            <option value="">-- All Subjects --</option>
-                            {% for subject in subject_list %}
-                              <option value="{{ subject }}" {% if subject == subject_filter %}selected{% endif %}>{{ subject }}</option>
-                            {% endfor %}
-                          </select>
-                          
-                        
-                    </div>
-                    <div class="filter-group">
-                        <label>Minimum Percentage</label>
-                        <input type="number" name="min_percentage" min="0" max="100" 
-                               value="{{ request.GET.min_percentage }}" placeholder="0-100">
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; margin-top: 15px;">
-                    <button type="submit" class="btn">Apply Filter</button>
-                    <a href="{% url 'view_analytics' %}" class="btn btn-reset">Reset</a>
-                </div>
-            <label for="collection">Select Batch:</label>
-            <select name="collection" id="collection" onchange="this.form.submit()">
-                <option value="">-- Select --</option>
-                {% for collection in collections %}
-                    <option value="{{ collection }}" {% if collection == selected_collection %}selected{% endif %}>{{ collection }}</option>
-                {% endfor %}
-            </select>
-            
+            <form method="GET" action="{% url 'view_analytics' %}" class="modern-analytics-form">
 
+                <!-- Batch Selection (on its own line) -->
+                <div class="form-group batch-selection">
+                    <label for="collection" class="form-label">Select Batch</label>
+                    <div class="select-wrapper">
+                        <select name="collection" id="collection" class="modern-select" onchange="this.form.submit()">
+                            <option value="">-- Select Batch --</option>
+                            {% for collection in collections %}
+                                <option value="{{ collection }}" {% if collection == selected_collection %}selected{% endif %}>{{ collection }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="select-arrow"></div>
+                    </div>
+                </div>
+            
+                <!-- Filters in a single line -->
+                <div class="filters-row">
+                    <!-- Student Name -->
+                    <div class="form-group">
+                        <label for="student_name" class="form-label">Student Name</label>
+                        <div class="input-with-icon">
+                            <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            </svg>
+                            <input type="text" id="student_name" name="student_name" 
+                                   value="{{ request.GET.student_name }}" 
+                                   placeholder="Search..." class="modern-input">
+                        </div>
+                    </div>
+            
+                    <!-- Date Range -->
+                    <div class="form-group">
+                        <label class="form-label">Date Range</label>
+                        <div class="date-range-group">
+                            <input type="date" name="start_date" value="{{ request.GET.start_date }}" class="modern-input date-input">
+                            <span class="date-range-separator">to</span>
+                            <input type="date" name="end_date" value="{{ request.GET.end_date }}" class="modern-input date-input">
+                        </div>
+                    </div>
+            
+                    <!-- Subject Filter -->
+                    <div class="form-group">
+                        <label for="subject" class="form-label">Subject</label>
+                        <div class="select-wrapper" style="margin-bottom:-12px;">
+                            <select name="subject" id="subject" class="modern-select">
+                                <option value="">-- All --</option>
+                                {% for subject in subject_list %}
+                                  <option value="{{ subject }}" {% if subject == subject_filter %}selected{% endif %}>{{ subject }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="select-arrow"></div>
+                        </div>
+                    </div>
+            
+                    <!-- Percentage Filter -->
+                    <div class="form-group">
+                        <label for="min_percentage" class="form-label">Min %</label>
+                        <input type="number" id="min_percentage" name="min_percentage" 
+                               min="0" max="100" value="{{ request.GET.min_percentage }}" 
+                               placeholder="0-100" class="modern-input">
+                    </div>
+            
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                            Apply
+                        </button>
+                        <a href="{% url 'view_analytics' %}" class="btn btn-secondary">
+                            Reset
+                        </a>
+                    </div>
+                </div>
             </form>
         </div>
 
