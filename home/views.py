@@ -720,3 +720,185 @@ def promotion_dashboard(request):
     except Exception as e:
         messages.error(request, f"System error: {str(e)}")
         return render(request, 'error.html')
+
+def update_options(request):
+    return render(request, 'update.html')
+def delete_collections(request):
+    if request.method == "POST":
+        academic_year = request.POST.get("academic_year")
+
+        if not academic_year:
+            messages.error(request, "Please provide an academic year.")
+            return redirect('delete_collections')
+
+        
+        deleted = []
+
+        # Get all collection names and filter those ending with the academic year
+        for collection_name in db.list_collection_names():
+            if collection_name.endswith(academic_year):
+                db.drop_collection(collection_name)
+                deleted.append(collection_name)
+
+        if deleted:
+            messages.success(request, f"Deleted collections: {', '.join(deleted)}")
+        else:
+            messages.info(request, "No collections matched the academic year.")
+        return redirect("update_options")
+
+    return render(request, "delete_collections.html")
+
+from django.core.files.storage import default_storage
+import os
+import pandas as pd
+def import_collection(request):
+    message = ""
+    if request.method == "POST":
+        dept = request.POST.get("department")
+        semester = request.POST.get("semester")
+        academic_year = request.POST.get("academic_year")
+
+        # Collect all subjects from dynamically generated fields
+        subject_names = []
+        for key in request.POST:
+            if key.startswith("subject_") and request.POST[key].strip():
+                subject_names.append(request.POST[key].strip())
+
+        uploaded_file = request.FILES.get("file")
+        if uploaded_file:
+            file_path = default_storage.save(uploaded_file.name, uploaded_file)
+            abs_path = os.path.join(default_storage.location, file_path)
+
+            ext = os.path.splitext(file_path)[-1].lower()
+            df = pd.read_excel(abs_path) if ext == ".xlsx" else pd.read_csv(abs_path)
+
+            collection_name = f"student_{dept}_{semester}_{academic_year}".lower()
+            student_collection = db[collection_name]
+
+            documents = []
+            for _, row in df.iterrows():
+                # Create a dictionary of subjects, each initialized as an empty dict
+                subject_data = {subject: {} for subject in subject_names}
+
+                doc = {
+                    "name": str(row["name"]),
+                    "roll_number": str(row["roll_number"]),
+                    "current_semester": semester,
+                    "academic_year": academic_year,
+                    "subjects": subject_data
+                }
+                documents.append(doc)
+
+            student_collection.insert_many(documents)
+            messages.success(request, "Collection imported successfully!")
+            return redirect("index")
+
+    return render(request, "import_collection.html", {"message": message})
+
+def export_collection_page(request):
+    years = ["2023-2024", "2024-2025", "2025-2026"]
+    semesters = [1, 2, 3, 4, 5, 6]
+    today = datetime.date.today().isoformat()
+    return render(request, "export_collection.html", {
+        "years": years,
+        "semesters": semesters,
+        "today": today
+    })
+
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+from pymongo import MongoClient
+import pandas as pd
+import io
+def get_semester_with_suffix(sem):
+    suffixes = {'1': '1st', '2': '2nd', '3': '3rd'}
+    return suffixes.get(sem, f"{sem}th")
+
+
+def export_collection(request):
+    departments = ['it']
+    semesters = ['1', '2', '3', '4', '5', '6', '7', '8']
+
+    years = []
+    collections = db.list_collection_names()
+    for col in collections:
+        if col.startswith("student_"):
+            parts = col.split('_')
+            if len(parts) >= 4:
+                years.append(parts[3])
+    years = sorted(set(years), reverse=True)
+
+    selected_dept = request.GET.get('dept') or request.POST.get('dept')
+    selected_sem = request.GET.get('sem') or request.POST.get('sem')
+    selected_year = request.GET.get('year') or request.POST.get('year')
+
+    subjects = []
+    if selected_dept and selected_sem and selected_year:
+        sem_with_suffix = get_semester_with_suffix(selected_sem)
+        collection_name = f"student_{selected_dept}_{sem_with_suffix}sem_{selected_year}"
+        if collection_name in collections:
+            try:
+                sample_doc = db[collection_name].find_one()
+                if sample_doc:
+                    subjects = list(sample_doc.get("subjects", {}).keys())
+            except Exception as e:
+                print("Error reading subject keys:", e)
+
+    if request.method == "POST":
+        subject = request.POST.get("subject")
+        export_type = request.POST.get("export_type")
+
+        if not all([selected_dept, selected_sem, selected_year, subject, export_type]):
+            return HttpResponse("Missing required fields", status=400)
+
+        sem_with_suffix = get_semester_with_suffix(selected_sem)
+        collection_name = f"student_{selected_dept}_{sem_with_suffix}sem_{selected_year}"
+
+        data = []
+        all_dates = set()
+
+        for student in db[collection_name].find():
+            name = student.get("name")
+            roll = student.get("roll_number") or student.get("roll")
+            attendance = student.get("subjects", {}).get(subject, {})
+
+            row = {"Name": name, "Roll No": roll}
+            for date, status_list in attendance.items():
+                value = status_list[0] if isinstance(status_list, list) and status_list else ''
+                row[date] = value
+                all_dates.add(date)
+            data.append(row)
+
+        if not data:
+            return HttpResponse("No attendance data found.", status=404)
+
+        # Sort columns: Name, Roll No, Date1, Date2, ...
+        all_dates = sorted(all_dates)
+        columns = ['Name', 'Roll No'] + all_dates
+
+        df = pd.DataFrame(data)
+        df = df.reindex(columns=columns, fill_value='')
+
+        if export_type == "csv":
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{subject}_attendance.csv"'
+            df.to_csv(path_or_buf=response, index=False)
+            return response
+        else:
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Attendance')
+            buffer.seek(0)
+            response = HttpResponse(buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="{subject}_attendance.xlsx"'
+            return response
+
+    return render(request, 'export_collection.html', {
+        "departments": departments,
+        "semesters": semesters,
+        "years": years,
+        "subjects": subjects,
+        "selected_dept": selected_dept,
+        "selected_sem": selected_sem,
+        "selected_year": selected_year
+    })

@@ -1,0 +1,19 @@
+<!-- templates/update.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Data Options</title>
+    <style>
+        body { font-family: Arial; background: #f0f0f0; text-align: center; padding: 50px; }
+        .btn { background: #007bff; color: #fff; padding: 15px 30px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Update Data Options</h1>
+    <a href="{% url 'promotion_dashboard' %}"><button class="btn">Promote Students</button></a>
+    <a href="{% url 'delete_collections' %}"><button class="btn">Delete Old Collections</button></a>
+    <a href="{% url 'import_collection' %}"><button class="btn">Import Collection</button></a>
+    <a href="{% url 'export_collection' %}"><button class="btn">Export Collection</button></a>
+</body>
+</html>
