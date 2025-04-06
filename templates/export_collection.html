@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Subject Attendance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Export Subject Attendance</h2>
+
+<form method="POST" action="{% url 'export_collection' %}">
+    {% csrf_token %}
+
+    <label for="dept">Department</label>
+    <select name="dept" id="dept" class="dynamic-select" required>
+        <option value="">-- Select Department --</option>
+        {% for d in departments %}
+        <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d|upper }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="year">Academic Year</label>
+    <select name="year" id="year" class="dynamic-select" required>
+        <option value="">-- Select Year --</option>
+        {% for y in years %}
+        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="sem">Semester</label>
+    <select name="sem" id="sem" class="dynamic-select" required>
+        <option value="">-- Select Semester --</option>
+        {% for s in semesters %}
+        <option value="{{ s }}" {% if selected_sem == s %}selected{% endif %}>
+            {% if s == '1' %}1st{% elif s == '2' %}2nd{% elif s == '3' %}3rd{% elif s == '4' %}4th
+            {% elif s == '5' %}5th{% elif s == '6' %}6th{% elif s == '7' %}7th{% elif s == '8' %}8th{% endif %}
+        </option>
+    {% endfor %}
+    </select>
+
+    <label for="subject">Subject</label>
+    <select name="subject" id="subject" required {% if not subjects %}disabled{% endif %}>
+        <option value="">-- Select Subject --</option>
+        {% for sub in subjects %}
+        <option value="{{ sub }}">{{ sub }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="export_type">Export As</label>
+    <select name="export_type" id="export_type" required>
+        <option value="csv">CSV</option>
+        <option value="excel">Excel</option>
+    </select>
+
+    <button type="submit">Export</button>
+</form>
+
+<script>
+    const selects = document.querySelectorAll('.dynamic-select');
+    selects.forEach(select => {
+        select.addEventListener('change', function () {
+            this.form.method = 'GET';
+            this.form.submit();
+        });
+    });
+</script>
+
+</body>
+</html>

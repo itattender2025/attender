@@ -17,4 +17,13 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('accounts/', include('allauth.urls')),
     path('promote/', views.promotion_dashboard, name='promotion_dashboard'),
+    
+    path('update/', views.update_options, name='update_options'),
+
+    # path('update/promote/', views.promote_students, name='promote_students'),
+    path('update/delete/', views.delete_collections, name='delete_collections'),
+    path('update/import/', views.import_collection, name='import_collection'),
+    path('export-collection/', views.export_collection, name='export_collection'),
+    # path('get_subjects/', views.get_subjects, name='get_subjects'),
+    # path('export-subject-attendance/', views.export_subject_attendance, name='export_subject_attendance'),
     ]

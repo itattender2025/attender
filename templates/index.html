@@ -547,6 +547,18 @@
             font-weight: bold;
             text-align: center;
         }
+        
+            .alert-container {
+                margin-bottom: 15px;
+            }
+            .alert.success {
+                background-color: #d4edda;
+                color: #155724;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            
+            
             
     </style>
 </head>
@@ -601,12 +613,12 @@
     </div>
 
     {% if messages %}
-    <div class="alert-container">
-        {% for message in messages %}
-            <div class="alert success">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
+<div class="alert-container">
+    {% for message in messages %}
+        <div class="alert success">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
 
     <!-- Main Content -->
     <div class="header">
@@ -656,7 +668,7 @@
             </div>
             <h2 class="card-title">Update Student Data</h2>
             <p class="card-subtitle">Quickly mark attendance for your current class session with multiple options</p>
-            <a href="{% url 'promotion_dashboard' %}" class="btn-card btn-update">Update</a>
+            <a href="{% url 'update_options' %}" class="btn-card btn-update">Update</a>
         </div>
     </div>
 
