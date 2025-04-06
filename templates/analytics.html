@@ -620,13 +620,15 @@
                         <input type="date" name="end_date" value="{{ request.GET.end_date }}">
                     </div>
                     <div class="filter-group">
-                        <label>Subject</label>
-                        <select name="subject">
-                            <option value="">All Subjects</option>
-                            <option value="MATH" {% if request.GET.subject == "MATH" %}selected{% endif %}>Mathematics</option>
-                            <option value="CA" {% if request.GET.subject == "CA" %}selected{% endif %}>Computer Architecture</option>
-                            <option value="AUTOMATA" {% if request.GET.subject == "AUTOMATA" %}selected{% endif %}>Automata Theory</option>
-                        </select>
+                        <label for="subject">Filter by Subject:</label>
+                        <select name="subject" id="subject">
+                            <option value="">-- All Subjects --</option>
+                            {% for subject in subject_list %}
+                              <option value="{{ subject }}" {% if subject == subject_filter %}selected{% endif %}>{{ subject }}</option>
+                            {% endfor %}
+                          </select>
+                          
+                        
                     </div>
                     <div class="filter-group">
                         <label>Minimum Percentage</label>
@@ -638,74 +640,158 @@
                     <button type="submit" class="btn">Apply Filter</button>
                     <a href="{% url 'view_analytics' %}" class="btn btn-reset">Reset</a>
                 </div>
+            <label for="collection">Select Batch:</label>
+            <select name="collection" id="collection" onchange="this.form.submit()">
+                <option value="">-- Select --</option>
+                {% for collection in collections %}
+                    <option value="{{ collection }}" {% if collection == selected_collection %}selected{% endif %}>{{ collection }}</option>
+                {% endfor %}
+            </select>
+            
+
             </form>
         </div>
 
         <div class="results-card">
             <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Roll Number</th>
-                        {% if not request.GET.subject %}
-                            <th>Math</th>
-                            <th>CA</th>
-                            <th>Automata</th>
-                        {% else %}
-                            <th>{{ request.GET.subject }}</th>
-                        {% endif %}
-                        <th>Overall</th>
-                        <th>Absent Dates</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td>{{ student.name }}</td>
-                        <td>{{ student.roll_number }}</td>
-                        
-                        {% if not request.GET.subject %}
-                            <td class="{% if student.math_percentage >= 75 %}color-green{% elif student.math_percentage >= 50 %}color-orange{% else %}color-red{% endif %}">
-                                {{ student.math_percentage|floatformat:1 }}%
-                            </td>
-                            <td class="{% if student.ca_percentage >= 75 %}color-green{% elif student.ca_percentage >= 50 %}color-orange{% else %}color-red{% endif %}">
-                                {{ student.ca_percentage|floatformat:1 }}%
-                            </td>
-                            <td class="{% if student.automata_percentage >= 75 %}color-green{% elif student.automata_percentage >= 50 %}color-orange{% else %}color-red{% endif %}">
-                                {{ student.automata_percentage|floatformat:1 }}%
-                            </td>
-                        {% else %}
-                            <td class="{% if student.filtered_subject_percentage >= 75 %}color-green{% elif student.filtered_subject_percentage >= 50 %}color-orange{% else %}color-red{% endif %}">
-                                {{ student.filtered_subject_percentage|floatformat:1 }}%
-                            </td>
-                        {% endif %}
-                        
-                        <td class="{% if student.overall_percentage >= 75 %}color-green{% elif student.overall_percentage >= 50 %}color-orange{% else %}color-red{% endif %}">
-                            {{ student.overall_percentage|floatformat:1 }}%
-                        </td>
-                        
-                        <td>
-                            {% if student.absent_dates %}
-                                <details>
-                                    <summary>View ({{ student.absent_dates|length }})</summary>
-                                    {{ student.absent_dates|join:", " }}
-                                </details>
-                            {% else %}
-                                No absences
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% if student.overall_percentage < 50 %}
-                    <tr>
-                        <td colspan="{% if request.GET.subject %}4{% else %}6{% endif %}">
-                            <div class="alert-box">⚠️ Warning: {{ student.name }} has low attendance ({{ student.overall_percentage|floatformat:1 }}%)</div>
-                        </td>
-                    </tr>
-                    {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Roll Number</th>
+
+            {% if not request.GET.subject %}
+                {% for subject in subject_list %}
+                    <th>{{ subject }}</th>
+                {% endfor %}
+            {% else %}
+                <th>{{ request.GET.subject }}</th>
+            {% endif %}
+
+            <th>Overall</th>
+            <th>Absent Dates</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td>{{ student.roll_number }}</td>
+
+            {% if not request.GET.subject %}
+                {% for subject in student.subject_percentages_flat %}
+                    <td class="{% if subject.percent >= 75 %}color-green
+                            {% elif subject.percent >= 50 %}color-orange
+                            {% else %}color-red
+                            {% endif %}">
+                        {{ subject.percent|floatformat:1 }}%
+                    </td>
+                {% endfor %}
+                {% else %}
+                <td class="{% if student.filtered_subject_percentage >= 75 %}color-green
+                            {% elif student.filtered_subject_percentage >= 50 %}color-orange
+                            {% else %}color-red
+                            {% endif %}">
+                    {{ student.filtered_subject_percentage|floatformat:1 }}%
+                </td>
+                {% endif %}
+
+
+            <td class="{% if student.overall_percentage >= 75 %}color-green
+                        {% elif student.overall_percentage >= 50 %}color-orange
+                        {% else %}color-red{% endif %}">
+                {{ student.overall_percentage|floatformat:1 }}%
+            </td>
+
+            <td>
+                {% if student.absent_dates %}
+                    <details>
+                        <summary>View ({{ student.absent_dates|length }})</summary>
+                        {{ student.absent_dates|join:", " }}
+                    </details>
+                {% else %}
+                    No absences
+                {% endif %}
+            </td>
+        </tr>
+
+        {% if student.overall_percentage < 50 %}
+        <tr>
+            <td colspan="{% if request.GET.subject %}4{% else %}{{ subject_list|length|add:"3" }}{% endif %}">
+                <div class="alert-box">
+                    ⚠️ Warning: {{ student.name }} has low attendance ({{ student.overall_percentage|floatformat:1 }}%)
+                </div>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
         </div>
     </div>
+    <script
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date if not set
+        const dateField = document.getElementById('date');
+        if (dateField && !dateField.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateField.value = today;
+        }
+    
+        // Dynamic subject loading
+        const yearSelect = document.getElementById('year');
+        const semSelect = document.getElementById('sem');
+        const subjectSelect = document.getElementById('subject');
+        const form = document.getElementById('attendanceForm');
+    
+        function loadSubjects() {
+            const year = yearSelect.value;
+            const sem = semSelect.value;
+            
+            if (!year || !sem) {
+                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                subjectSelect.disabled = true;
+                return;
+            }
+    
+            // Show loading state
+            subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+            subjectSelect.disabled = true;
+    
+            // AJAX request to get subjects
+            fetch(`/take-attendance/?sem=${sem}&year=${year}`)
+                .then(response => response.text())
+                .then(html => {
+                    // Create a temporary DOM parser to extract the subjects
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const subjectOptions = doc.querySelectorAll('#subject option');
+                    
+                    // Update subject select
+                    subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                    subjectOptions.forEach(option => {
+                        if (option.value) {  // Skip the default empty option
+                            subjectSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                    
+                    subjectSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading subjects:', error);
+                    subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+                });
+        }
+    
+        // Event listeners for dynamic loading
+        yearSelect.addEventListener('change', loadSubjects);
+        semSelect.addEventListener('change', loadSubjects);
+    
+        // Initial load if year and sem are already selected
+        if (yearSelect.value && semSelect.value) {
+            loadSubjects();
+        }
+    });
+    </script>
 </body>
 </html>

@@ -527,131 +527,136 @@ def parse_date(date_str):
 
 from datetime import datetime, date
 
+from .mongo_utils import get_db_connection, get_all_student_collections
+
 
 @custom_login_required
 def view_analytics(request):
-    # Get all filter parameters
-    student_name = request.GET.get('student_name', '').strip()
-    start_date_str = request.GET.get('start_date', '')
-    end_date_str = request.GET.get('end_date', '')
-    subject_filter = request.GET.get('subject', '')
-    min_percentage_str = request.GET.get('min_percentage', '')
+    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
 
-    # Initialize filter variables
-    start_date = None
-    end_date = None
-    min_percentage = 0
+    # Get filter parameters
+    student_name = request.GET.get("student_name", "").strip()
+    subject_filter = request.GET.get("subject", "").strip()
+    start_date_str = request.GET.get("start_date", "")
+    end_date_str = request.GET.get("end_date", "")
+    min_percentage_str = request.GET.get("min_percentage", "0").strip()
+    selected_collection = request.GET.get("collection", "")
 
-    # Parse dates
-    try:
-        if start_date_str:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        if end_date_str:
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        messages.error(request, "Invalid date format. Please use YYYY-MM-DD.")
-    
-    # Parse minimum percentage
-    try:
-        min_percentage = float(min_percentage_str) if min_percentage_str else 0
-    except ValueError:
-        messages.error(request, "Invalid percentage value.")
-        min_percentage = 0
+    # Convert dates
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+    min_percentage = float(min_percentage_str) if min_percentage_str else 0
 
-    # Build MongoDB query
-    query = {}
-    if student_name:
-        query["name"] = {"$regex": student_name, "$options": "i"}  # Case-insensitive search
-
-    # Fetch students with filters
-    students_data = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
     processed_students = []
+    subject_list = []
 
-    for student in students_data:
-        subject_stats = {}
-        absent_dates = []
+    if selected_collection and selected_collection in collections:
+        students_collection = db[selected_collection]
 
-        # Initialize only the filtered subject or all subjects if none selected
-        subjects_to_check = [subject_filter] if subject_filter else ["MATH", "CA", "AUTOMATA"]
-        
-        for subject in subjects_to_check:
-            subject_stats[subject] = {"present": 0, "total": 0}
+        # Dynamically get subject list
+        try:
+            pipeline = [
+                {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
+                {"$unwind": "$subjects"},
+                {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
+            ]
+            result = list(students_collection.aggregate(pipeline))
+            subject_list = result[0]['subjects'] if result else []
+        except Exception as e:
+            print("DEBUG >> Subject extraction error:", e)
 
-        if isinstance(student.get("attendance"), dict):
-            for subject, attendance in student["attendance"].items():
-                # Skip if we're filtering by subject and this isn't it
-                if subject_filter and subject != subject_filter:
-                    continue
-                    
-                if isinstance(attendance, dict):
-                    for date_str, statuses in attendance.items():
-                        try:
-                            # Parse date from format "dd-mm" to date object
-                            day, month = map(int, date_str.split('-'))
-                            current_year = datetime.now().year
-                            parsed_date = date(current_year, month, day)
+        # Build student query
+        query = {}
+        if student_name:
+            query["name"] = {"$regex": student_name, "$options": "i"}
 
-                            # Apply date filter
-                            if start_date and parsed_date < start_date:
+        students_data = list(students_collection.find(query, {
+            "_id": 0, "name": 1, "roll_number": 1, "attendance": 1
+        }))
+
+        for student in students_data:
+            subject_stats = {}
+            absent_dates = []
+            subjects_to_check = [subject_filter] if subject_filter else subject_list
+
+            for subject in subjects_to_check:
+                subject_stats[subject] = {"present": 0, "total": 0}
+
+            if isinstance(student.get("attendance"), dict):
+                for subject, attendance in student["attendance"].items():
+                    if subject_filter and subject != subject_filter:
+                        continue
+                    if isinstance(attendance, dict):
+                        for date_str, statuses in attendance.items():
+                            try:
+                                day, month = map(int, date_str.split('-'))
+                                current_year = datetime.now().year
+                                parsed_date = date(current_year, month, day)
+
+                                if start_date and parsed_date < start_date:
+                                    continue
+                                if end_date and parsed_date > end_date:
+                                    continue
+
+                                if isinstance(statuses, str):
+                                    statuses = [statuses]
+
+                                for status in statuses:
+                                    if subject not in subject_stats:
+                                        subject_stats[subject] = {"present": 0, "total": 0}
+                                    subject_stats[subject]["total"] += 1
+                                    if status == "P":
+                                        subject_stats[subject]["present"] += 1
+                                    else:
+                                        absent_dates.append(parsed_date.strftime("%Y-%m-%d"))
+                            except (ValueError, IndexError):
                                 continue
-                            if end_date and parsed_date > end_date:
-                                continue
 
-                            # Process attendance statuses
-                            if isinstance(statuses, str):
-                                statuses = [statuses]
+            # Calculate subject-wise percentages
+            percentages = {}
+            for subject in subjects_to_check:
+                stats = subject_stats.get(subject, {"present": 0, "total": 0})
+                percentages[subject] = (stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0
 
-                            for status in statuses:
-                                if subject not in subject_stats:
-                                    subject_stats[subject] = {"present": 0, "total": 0}
-                                subject_stats[subject]["total"] += 1
-                                if status == "P":
-                                    subject_stats[subject]["present"] += 1
-                                else:
-                                    absent_dates.append(parsed_date.strftime("%Y-%m-%d"))
-                        except (ValueError, IndexError):
-                            continue
+            total_classes = sum(stats["total"] for stats in subject_stats.values())
+            attended_classes = sum(stats["present"] for stats in subject_stats.values())
+            overall_percentage = (attended_classes / total_classes * 100) if total_classes > 0 else 0
 
-        # Calculate percentages only for relevant subjects
-        percentages = {}
-        for subject in subjects_to_check:
-            stats = subject_stats.get(subject, {"present": 0, "total": 0})
-            percentages[subject] = (stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        
-        # Calculate overall percentage
-        total_classes = sum(stats["total"] for stats in subject_stats.values())
-        attended_classes = sum(stats["present"] for stats in subject_stats.values())
-        overall_percentage = (attended_classes / total_classes * 100) if total_classes > 0 else 0
+            if overall_percentage < min_percentage:
+                continue
 
-        # Apply minimum percentage filter
-        if overall_percentage < min_percentage:
-            continue
+            # Prepare student record
+            student_data = {
+                "name": student.get("name", "Unknown"),
+                "roll_number": student.get("roll_number", "Unknown"),
+                "overall_percentage": overall_percentage,
+                "absent_dates": absent_dates,
+            }
 
-        # Prepare student data - only include filtered subject if specified
-        student_data = {
-            "name": student.get("name", "Unknown"),
-            "roll_number": student.get("roll_number", "Unknown"),
-            "overall_percentage": overall_percentage,
-            "absent_dates": absent_dates
-        }
+            if subject_filter:
+                student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
+            else:
+                subject_percentages_flat = []
+                for subject in subject_list:
+                    subject_percentages_flat.append({
+                        "name": subject,
+                        "percent": percentages.get(subject, 0)
+                    })
+                student_data["subject_percentages_flat"] = subject_percentages_flat
 
-        # Add subject percentages
-        if subject_filter:
-            student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
-        else:
-            for subject in ["MATH", "CA", "AUTOMATA"]:
-                student_data[f"{subject.lower()}_percentage"] = percentages.get(subject, 0)
+            processed_students.append(student_data)
 
-        processed_students.append(student_data)
+    # Get session name for greeting
     name = request.session.get('name', '').split()
-    if len(name) > 0:
-        first_name = name[0]
-    else:
-        first_name = "Guest"
+    first_name = name[0] if name else "Guest"
+
     return render(request, 'analytics.html', {
         "students": processed_students,
         "username": first_name,
         "subject_filter": subject_filter,
+        "collections": collections,
+        "selected_collection": selected_collection,
+        "subject_list": subject_list,
         "filters": {
             "student_name": student_name,
             "start_date": start_date_str,
@@ -659,7 +664,6 @@ def view_analytics(request):
             "min_percentage": min_percentage_str
         }
     })
-
 
 
 
