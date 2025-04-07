@@ -58,8 +58,7 @@ from urllib3 import PoolManager
 from requests.adapters import HTTPAdapter
 
 
-ALLOWED_HOSTS = ["127.0.0.1"]
-
+ALLOWED_HOSTS = ["127.0.0.1",'localhost']
 
 # Application definition
 
@@ -244,3 +243,14 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after closing browser
 SESSION_COOKIE_SECURE = False  # Make sure HTTPS is not required for local testing
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
 SESSION_COOKIE_NAME = "sessionid"  # Default session cookie name
+
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'akashincode@gmail.com'  # ✅ replace with your Gmail
+EMAIL_HOST_PASSWORD = 'shhcptofonbjbhcw'  # ✅ your 16-digit App Password
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

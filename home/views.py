@@ -46,8 +46,6 @@ password_reset_collection = db["home_passwordresetrequest"]
 
 
 
-users_collection = db["home_user"]  # Ensure collection name is correct
-
 def signup_view(request):
     if request.method == 'POST':
         first_name = request.POST.get("first_name", "").strip()
@@ -106,7 +104,6 @@ class MongoDBAuthBackend(BaseBackend):
 
 
 
-
 def forgot_password_view(request):
     if request.method == 'POST':
         email = request.POST['email']
@@ -116,20 +113,62 @@ def forgot_password_view(request):
             token = get_random_string(32)
             password_reset_collection.insert_one({"email": email, "token": token})
 
-            # You need to implement email sending
             reset_link = f"http://localhost:8000/reset-password/{token}/"
-            print(f"Reset Link: {reset_link}")  # Debugging: Log the reset link
+
+            # ✅ Send the reset email
+            send_mail(
+                subject="Password Reset Request",
+                message=f"Click the link below to reset your password:\n{reset_link}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
 
             messages.success(request, "Reset link sent to your email.")
         else:
             messages.error(request, "Email not found.")
 
     return render(request, 'login.html')
-# def logout_view(request):
-#     pass
 
 
-users = db.home_user
+
+
+def reset_password_view(request, token):
+    # Check token in DB
+    token_data = password_reset_collection.find_one({"token": token})
+    
+    if not token_data:
+        return render(request, 'reset_password.html', {"error": "Invalid or expired link"})
+
+    if request.method == 'POST':
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if new_password != confirm_password:
+            return render(request, 'reset_password.html', {"error": "Passwords do not match."})
+
+        # Hash and update password
+        hashed_pw = make_password(new_password)
+        users_collection.update_one(
+            {"email": token_data["email"]},
+            {"$set": {"password": hashed_pw}}
+        )
+
+        # Delete used token
+        password_reset_collection.delete_one({"token": token})
+        messages.success(request, "Password reset successfully. Please login.")
+        return redirect("login")
+
+    return render(request, "reset_password.html", {"token": token})
+
+
+
+
+
+
+
+
+users = db["home_user"]
 sessions = db.django_session
 
 # 🔹 Custom Authentication Decorator
@@ -178,7 +217,8 @@ def login_view(request):
         print("🔍 Full Form Data:", request.POST.dict())  # Debugging
 
         # Find user in MongoDB
-        user = users.find_one({"email": email})
+        user = users.find_one({"$or": [{"email": email}, {"username": email}]})
+
         if user and check_password(password, user["password"]):
             session_token = secrets.token_hex(32)  # Generate a session token
             session_data = {
@@ -543,8 +583,12 @@ def view_analytics(request):
     selected_collection = request.GET.get("collection", "")
 
     # Convert dates
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+    try:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+    except ValueError:
+        start_date, end_date = None, None
+        
     min_percentage = float(min_percentage_str) if min_percentage_str else 0
 
     processed_students = []
@@ -564,6 +608,7 @@ def view_analytics(request):
             subject_list = result[0]['subjects'] if result else []
         except Exception as e:
             print("DEBUG >> Subject extraction error:", e)
+            subject_list = []
 
         # Build student query
         query = {}
@@ -571,7 +616,7 @@ def view_analytics(request):
             query["name"] = {"$regex": student_name, "$options": "i"}
 
         students_data = list(students_collection.find(query, {
-            "_id": 0, "name": 1, "roll_number": 1, "attendance": 1
+            "_id": 0, "name": 1, "roll_number": 1, "subjects": 1
         }))
 
         for student in students_data:
@@ -582,45 +627,54 @@ def view_analytics(request):
             for subject in subjects_to_check:
                 subject_stats[subject] = {"present": 0, "total": 0}
 
-            if isinstance(student.get("attendance"), dict):
-                for subject, attendance in student["attendance"].items():
-                    if subject_filter and subject != subject_filter:
-                        continue
-                    if isinstance(attendance, dict):
-                        for date_str, statuses in attendance.items():
-                            try:
-                                day, month = map(int, date_str.split('-'))
-                                current_year = datetime.now().year
-                                parsed_date = date(current_year, month, day)
-
-                                if start_date and parsed_date < start_date:
-                                    continue
-                                if end_date and parsed_date > end_date:
-                                    continue
-
-                                if isinstance(statuses, str):
-                                    statuses = [statuses]
-
-                                for status in statuses:
-                                    if subject not in subject_stats:
-                                        subject_stats[subject] = {"present": 0, "total": 0}
-                                    subject_stats[subject]["total"] += 1
-                                    if status == "P":
-                                        subject_stats[subject]["present"] += 1
-                                    else:
-                                        absent_dates.append(parsed_date.strftime("%Y-%m-%d"))
-                            except (ValueError, IndexError):
+            if isinstance(student.get("subjects"), dict):
+                for subject in subjects_to_check:
+                    subject_data = student["subjects"].get(subject, {})
+                    
+                    # Handle both direct dates and nested attendance objects
+                    attendance_records = {}
+                    if isinstance(subject_data, dict):
+                        attendance_records = subject_data
+                    elif isinstance(subject_data.get("attendance"), dict):
+                        attendance_records = subject_data["attendance"]
+                    
+                    for date_str, status in attendance_records.items():
+                        try:
+                            # Parse date in YYYY-MM-DD format
+                            parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                            
+                            if start_date and parsed_date < start_date:
                                 continue
+                            if end_date and parsed_date > end_date:
+                                continue
+                            
+                            # Handle different status formats
+                            statuses = []
+                            if isinstance(status, str):
+                                statuses = [status]
+                            elif isinstance(status, list):
+                                statuses = status
+                            
+                            for s in statuses:
+                                if subject not in subject_stats:
+                                    subject_stats[subject] = {"present": 0, "total": 0}
+                                subject_stats[subject]["total"] += 1
+                                if s == "P":
+                                    subject_stats[subject]["present"] += 1
+                                else:
+                                    absent_dates.append(date_str)  # Store original date string
+                        except (ValueError, AttributeError):
+                            continue
 
-            # Calculate subject-wise percentages
+            # Calculate percentages
             percentages = {}
             for subject in subjects_to_check:
                 stats = subject_stats.get(subject, {"present": 0, "total": 0})
-                percentages[subject] = (stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0
+                percentages[subject] = round((stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0, 2)
 
             total_classes = sum(stats["total"] for stats in subject_stats.values())
             attended_classes = sum(stats["present"] for stats in subject_stats.values())
-            overall_percentage = (attended_classes / total_classes * 100) if total_classes > 0 else 0
+            overall_percentage = round((attended_classes / total_classes * 100) if total_classes > 0 else 0, 2)
 
             if overall_percentage < min_percentage:
                 continue
@@ -630,19 +684,16 @@ def view_analytics(request):
                 "name": student.get("name", "Unknown"),
                 "roll_number": student.get("roll_number", "Unknown"),
                 "overall_percentage": overall_percentage,
-                "absent_dates": absent_dates,
+                "absent_dates": list(set(absent_dates)) or ["No absences"],
             }
 
             if subject_filter:
                 student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
             else:
-                subject_percentages_flat = []
-                for subject in subject_list:
-                    subject_percentages_flat.append({
-                        "name": subject,
-                        "percent": percentages.get(subject, 0)
-                    })
-                student_data["subject_percentages_flat"] = subject_percentages_flat
+                student_data["subject_percentages_flat"] = [
+                    {"name": subject, "percent": percentages.get(subject, 0)}
+                    for subject in subject_list
+                ]
 
             processed_students.append(student_data)
 
@@ -664,7 +715,6 @@ def view_analytics(request):
             "min_percentage": min_percentage_str
         }
     })
-
 
 
 @custom_login_required

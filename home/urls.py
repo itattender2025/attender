@@ -12,8 +12,8 @@ urlpatterns = [
     path('analytics/', views.view_analytics, name='view_analytics'),
      path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
-    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
-    path('reset-password/<str:token>/', views.forgot_password_view, name='reset_password'),
+    path("forgot-password/", views.forgot_password_view, name="forgot_password"),
+    
     path('logout/', views.logout_view, name='logout'),
     path('accounts/', include('allauth.urls')),
     path('promote/', views.promotion_dashboard, name='promotion_dashboard'),
@@ -26,4 +26,7 @@ urlpatterns = [
     path('export-collection/', views.export_collection, name='export_collection'),
     # path('get_subjects/', views.get_subjects, name='get_subjects'),
     # path('export-subject-attendance/', views.export_subject_attendance, name='export_subject_attendance'),
+    path("reset-password/<str:token>/", views.reset_password_view, name="reset_password"),
+
+
     ]
