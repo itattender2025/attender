@@ -113,7 +113,8 @@ def forgot_password_view(request):
             token = get_random_string(32)
             password_reset_collection.insert_one({"email": email, "token": token})
 
-            reset_link = f"http://localhost:8000/reset-password/{token}/"
+            reset_link = f"https://attender-auwz.onrender.com/reset-password/{token}/"
+
 
             # ✅ Send the reset email
             send_mail(
