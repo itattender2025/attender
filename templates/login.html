@@ -379,6 +379,61 @@
     </section>
 
     <!-- JavaScript -->
-    <script src="{% static 'script.js' %}"></script>
+   <script>
+        const forms = document.querySelector(".forms");
+        const pwShowHide = document.querySelectorAll(".eye-icon");
+        const links = document.querySelectorAll(".link");
+        const forgotPasswordLink = document.querySelector(".forgotpassword-link");
+        const forgotPasswordBox = document.querySelector(".forgotpasswordform");
+        const loginBox = document.querySelector(".login");
+        const registerBox = document.querySelector(".signup");
+        const backBtn = document.querySelector(".backbtn");
+
+        // Show/hide password
+        pwShowHide.forEach(eyeIcon => {
+            eyeIcon.addEventListener("click", () => {
+                let pwFields = eyeIcon.parentElement.parentElement.querySelectorAll(".password");
+                pwFields.forEach(password => {
+                    if (password.type === "password") {
+                        password.type = "text";
+                        eyeIcon.classList.replace("bx-hide", "bx-show");
+                    } else {
+                        password.type = "password";
+                        eyeIcon.classList.replace("bx-show", "bx-hide");
+                    }
+                });
+            });
+        });
+
+        // Toggle login/signup
+        links.forEach(link => {
+            link.addEventListener("click", e => {
+                e.preventDefault();
+                loginBox.style.display = loginBox.style.display === "none" ? "block" : "none";
+                registerBox.style.display = registerBox.style.display === "block" ? "none" : "block";
+                forgotPasswordBox.style.display = "none";
+            });
+        });
+
+        // Show forgot password form
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                forgotPasswordBox.style.display = "block";
+                registerBox.style.display = "none";
+                loginBox.style.display = "none";
+            });
+        }
+
+        // Back to login
+        if (backBtn) {
+            backBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                forgotPasswordBox.style.display = "none";
+                loginBox.style.display = "block";
+                registerBox.style.display = "block";
+            });
+        }
+    </script>
 </body>
 </html>
