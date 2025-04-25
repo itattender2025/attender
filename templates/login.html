@@ -1,4 +1,4 @@
-{% load static %}
+{% comment %} {% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -126,5 +126,259 @@
     <!-- JavaScript -->
     <script src="{% static 'script.js' %}"></script>
 
+</body>
+</html> {% endcomment %}
+
+
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Login and Signup Form</title>
+
+    <!-- Boxicons CSS -->
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.login {
+            display: block;
+        }
+
+        .form-content header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .button-field button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: #fff;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .button-field button:hover {
+            background: #0056b3;
+        }
+
+        .form-link {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .form-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .form-link a:hover {
+            text-decoration: underline;
+        }
+
+        .eye-icon {
+            position: absolute;
+            right: 20px;
+            top: 45%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .input-field {
+            position: relative;
+        }
+
+        .alerts {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .forgotpasswordform {
+            display: none;
+        }
+
+        .newbtnbox {
+            display: flex;
+            gap: 10px;
+        }
+
+        .newbtnbox button {
+            flex: 1;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .form-content header {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="container forms">
+        {% if messages %}
+        <div class="alerts">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <div class="form login">
+            <div class="form-content">
+                <header>Login</header>
+                <form action="{% url 'login' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="field input-field">
+                        <input type="email" name="email" placeholder="Email" class="input" required>
+                    </div>
+
+                    <div class="field input-field">
+                        <input type="password" name="password" placeholder="Password" class="password" required>
+                        <i class='bx bx-hide eye-icon'></i>
+                    </div>
+
+                    <div class="form-link">
+                        <a href="#" class="forgotpassword-link">Forgot password?</a>
+                    </div>
+
+                    <div class="field button-field">
+                        <button type="submit">Login</button>
+                    </div>
+                </form>
+
+                <div class="form-link">
+                    <span>Don't have an account? <a href="#" class="link signup-link">Signup</a></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="form signup">
+            <div class="form-content">
+                <header>Signup</header>
+                <form action="{% url 'signup' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="field input-field">
+                        <input type="text" name="first_name" placeholder="First name" class="input" required>
+                    </div>
+                    <div class="field input-field">
+                        <input type="text" name="last_name" placeholder="Last name" class="input" required>
+                    </div>
+                    <div class="field input-field">
+                        <input type="email" name="email" placeholder="Email" class="input" required>
+                    </div>
+                    <div class="field input-field">
+                        <input type="password" name="password" placeholder="Create password" class="password" required>
+                        <i class='bx bx-hide eye-icon'></i>
+                    </div>
+                    <div class="field button-field">
+                        <button type="submit">Signup</button>
+                    </div>
+                </form>
+
+                <div class="form-link">
+                    <span>Already have an account? <a href="#" class="link login-link">Login</a></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div class="form forgotpasswordform">
+            <div class="form-content">
+                <header>Forgot Password</header>
+                <form action="{% url 'forgot_password' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="field input-field">
+                        <input type="email" name="email" placeholder="Email" class="input" required>
+                    </div>
+                    <div class="field button-field newbtnbox">
+                        <button type="submit">Send</button>
+                        <button type="button" class="backbtn">Back</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- JavaScript -->
+    <script src="{% static 'script.js' %}"></script>
 </body>
 </html>
