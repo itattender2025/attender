@@ -58,7 +58,7 @@ from urllib3 import PoolManager
 from requests.adapters import HTTPAdapter
 
 
-ALLOWED_HOSTS = ["127.0.0.1",'localhost']
+ALLOWED_HOSTS = ["127.0.0.1","localhost","attender-0rr9.onrender.com"]
 
 # Application definition
 
