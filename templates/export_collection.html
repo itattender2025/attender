@@ -2,107 +2,199 @@
 <html>
 <head>
     <title>Export Subject Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #1abc9c;
+            --light-gray: #f8f9fa;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-gray);
+            padding-top: 60px;
         }
-        h2 {
-            text-align: center;
-            color: #333;
+        
+        .navbar {
+            background-color: var(--secondary-color);
+            padding: 15px 5%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
         }
-        form {
-            max-width: 500px;
-            margin: 0 auto;
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 16px;
+            transition: all 0.3s;
+        }
+        
+        .navbar a:hover {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+        }
+        
+        .export-container {
+            max-width: 600px;
+            margin: 30px auto;
             background: white;
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
+        
+        h2 {
+            text-align: center;
+            color: var(--secondary-color);
+            margin-bottom: 25px;
+        }
+        
         label {
-            font-weight: bold;
-            margin-top: 10px;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-top: 15px;
             display: block;
         }
+        
         select, button {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
         }
+        
+        select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
         button {
-            background: #4285f4;
+            background: var(--primary-color);
             color: white;
-            font-size: 16px;
+            font-weight: 500;
+            border: none;
             cursor: pointer;
+            margin-top: 25px;
         }
+        
         button:hover {
-            background: #3367d6;
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .export-container {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .navbar {
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div>
+            <a href="{% url 'index' %}"><i class="fas fa-home"></i> Home</a>
+            
+            
+        </div>
+    </nav>
 
-<h2>Export Subject Attendance</h2>
+    <div class="export-container">
+        <h2><i class="fas fa-file-export"></i> Export Subject Attendance</h2>
+        
+        <form method="POST" action="{% url 'export_collection' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="dept"><i class="fas fa-building"></i> Department</label>
+                <select name="dept" id="dept" class="dynamic-select" required>
+                    <option value="">-- Select Department --</option>
+                    {% for d in departments %}
+                    <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d|upper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="year"><i class="fas fa-calendar-alt"></i> Academic Year</label>
+                <select name="year" id="year" class="dynamic-select" required>
+                    <option value="">-- Select Year --</option>
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="sem"><i class="fas fa-layer-group"></i> Semester</label>
+                <select name="sem" id="sem" class="dynamic-select" required>
+                    <option value="">-- Select Semester --</option>
+                    {% for s in semesters %}
+                    <option value="{{ s }}" {% if selected_sem == s %}selected{% endif %}>
+                        {% if s == '1' %}1st{% elif s == '2' %}2nd{% elif s == '3' %}3rd{% elif s == '4' %}4th
+                        {% elif s == '5' %}5th{% elif s == '6' %}6th{% elif s == '7' %}7th{% elif s == '8' %}8th{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subject"><i class="fas fa-book"></i> Subject</label>
+                <select name="subject" id="subject" required {% if not subjects %}disabled{% endif %}>
+                    <option value="">-- Select Subject --</option>
+                    {% for sub in subjects %}
+                    <option value="{{ sub }}">{{ sub }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="export_type"><i class="fas fa-file-download"></i> Export As</label>
+                <select name="export_type" id="export_type" required>
+                    <option value="csv">CSV</option>
+                    <option value="excel">Excel</option>
+                </select>
+            </div>
+            
+            <button type="submit"><i class="fas fa-download"></i> Export</button>
+        </form>
+    </div>
 
-<form method="POST" action="{% url 'export_collection' %}">
-    {% csrf_token %}
-
-    <label for="dept">Department</label>
-    <select name="dept" id="dept" class="dynamic-select" required>
-        <option value="">-- Select Department --</option>
-        {% for d in departments %}
-        <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d|upper }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="year">Academic Year</label>
-    <select name="year" id="year" class="dynamic-select" required>
-        <option value="">-- Select Year --</option>
-        {% for y in years %}
-        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="sem">Semester</label>
-    <select name="sem" id="sem" class="dynamic-select" required>
-        <option value="">-- Select Semester --</option>
-        {% for s in semesters %}
-        <option value="{{ s }}" {% if selected_sem == s %}selected{% endif %}>
-            {% if s == '1' %}1st{% elif s == '2' %}2nd{% elif s == '3' %}3rd{% elif s == '4' %}4th
-            {% elif s == '5' %}5th{% elif s == '6' %}6th{% elif s == '7' %}7th{% elif s == '8' %}8th{% endif %}
-        </option>
-    {% endfor %}
-    </select>
-
-    <label for="subject">Subject</label>
-    <select name="subject" id="subject" required {% if not subjects %}disabled{% endif %}>
-        <option value="">-- Select Subject --</option>
-        {% for sub in subjects %}
-        <option value="{{ sub }}">{{ sub }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="export_type">Export As</label>
-    <select name="export_type" id="export_type" required>
-        <option value="csv">CSV</option>
-        <option value="excel">Excel</option>
-    </select>
-
-    <button type="submit">Export</button>
-</form>
-
-<script>
-    const selects = document.querySelectorAll('.dynamic-select');
-    selects.forEach(select => {
-        select.addEventListener('change', function () {
-            this.form.method = 'GET';
-            this.form.submit();
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const selects = document.querySelectorAll('.dynamic-select');
+        selects.forEach(select => {
+            select.addEventListener('change', function () {
+                this.form.method = 'GET';
+                this.form.submit();
+            });
         });
-    });
-</script>
-
+        
+        // Highlight current page in navbar
+        const currentPage = window.location.pathname;
+        document.querySelectorAll('.navbar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.style.backgroundColor = 'var(--accent-color)';
+                link.style.borderRadius = '4px';
+            }
+        });
+    </script>
 </body>
 </html>
