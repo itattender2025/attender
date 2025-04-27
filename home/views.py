@@ -34,7 +34,8 @@ username = quote_plus("it24akashmondal")
 password = quote_plus("akashmondal@2004")
 
 
-client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
+
+client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.qhfdiks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
 db = client["attender_db"]
 students_collection = db["student_it_2nd_year"]  # Collection where student records are stored
 users_collection = db["home_user"]
