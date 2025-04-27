@@ -154,7 +154,7 @@ username = urllib.parse.quote_plus(MONGO_USERNAME)
 password = urllib.parse.quote_plus(MONGO_PASSWORD)
 
 # MongoDB connection string
-MONGO_URI = f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007"
+MONGO_URI = f"mongodb+srv://{username}:{password}@cluster007.qhfdiks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0077"
 
 # Connect to MongoDB
 client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True)
