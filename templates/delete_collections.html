@@ -86,8 +86,146 @@
             border: 1px solid #ffeeba;
         }
     </style>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #1abc9c;
+            --light-gray: #f8f9fa;
+            --success-color: #2e8b57;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-gray);
+            padding-top: 60px;
+        }
+        
+        .navbar {
+            background-color: var(--secondary-color);
+            padding: 15px 5%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 16px;
+            transition: all 0.3s;
+        }
+        
+        .navbar a:hover {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+        }
+        
+        .import-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        h2 {
+            text-align: center;
+            color: var(--secondary-color);
+            margin-bottom: 25px;
+        }
+        
+        label {
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-top: 15px;
+            display: block;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: var(--success-color);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #246b45;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .subject-inputs {
+            margin-top: 20px;
+            background-color: var(--light-gray);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .subject-field {
+            margin-bottom: 15px;
+        }
+        
+        .subject-field input {
+            margin-bottom: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .import-container {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .navbar {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div>
+            <a href="{% url 'index' %}"><i class="fas fa-home"></i> Home</a>
+            {% comment %} <a href="{% url 'update' %}"><i class="fas fa-edit"></i> Update</a>
+            <a href="{% url 'import_collection' %}" class="active"><i class="fas fa-file-import"></i> Import</a>
+            <a href="{% url 'export_collection' %}"><i class="fas fa-file-export"></i> Export</a>
+            <a href="#"><i class="fas fa-cog"></i> Settings</a> {% endcomment %}
+        </div>
+    </nav>
     <div class="container">
         <h2>Delete Collections by Academic Year</h2>
         {% if messages %}
