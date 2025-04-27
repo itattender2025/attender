@@ -1,19 +1,333 @@
 <!-- templates/update.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Update Data Options</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management Center</title>
     <style>
-        body { font-family: Arial; background: #f0f0f0; text-align: center; padding: 50px; }
-        .btn { background: #007bff; color: #fff; padding: 15px 30px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
-        .btn:hover { background: #0056b3; }
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #1abc9c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --success: #2ecc71;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background-color: var(--secondary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            margin-left: 1rem;
+            border-radius: 4px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-links a:hover {
+            background-color: var(--accent);
+        }
+        
+        .nav-links i {
+            margin-right: 8px;
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header h1 {
+            color: var(--secondary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Options Grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .option-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease;
+            animation-fill-mode: backwards;
+        }
+        
+        .option-card:nth-child(1) { animation-delay: 0.1s; }
+        .option-card:nth-child(2) { animation-delay: 0.2s; }
+        .option-card:nth-child(3) { animation-delay: 0.3s; }
+        .option-card:nth-child(4) { animation-delay: 0.4s; }
+        
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .option-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+        }
+        
+        .promote::before { background: var(--success); }
+        .delete::before { background: var(--danger); }
+        .import::before { background: var(--warning); }
+        .export::before { background: var(--primary); }
+        
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+        
+        .option-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+        }
+        
+        .option-card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--secondary);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                margin-top: 1rem;
+            }
+            
+            .nav-links a {
+                margin: 0 0.5rem;
+            }
+            
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <h1>Update Data Options</h1>
-    <a href="{% url 'promotion_dashboard' %}"><button class="btn">Promote Students</button></a>
-    <a href="{% url 'delete_collections' %}"><button class="btn">Delete Old Collections</button></a>
-    <a href="{% url 'import_collection' %}"><button class="btn">Import Collection</button></a>
-    <a href="{% url 'export_collection' %}"><button class="btn">Export Collection</button></a>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="{% url 'index' %}" class="logo">
+            <i class="fas fa-database"></i>
+            <span>Data Manager</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="{% url 'index' %}"><i class="fas fa-home"></i> Home</a></li>
+            
+        </ul>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <div class="header">
+            <h1>Data Management Center</h1>
+            <p>Manage your database collections with these powerful tools. Choose an option below to perform specific actions on your data.</p>
+        </div>
+        
+        <div class="options-grid">
+            <div class="option-card promote">
+                <div class="icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3>Promote Students</h3>
+                <p>Advance students to the next academic level or graduation class while preserving their records.</p>
+                <a href="{% url 'promotion_dashboard' %}" class="btn btn-success">Promote Students</a>
+            </div>
+            
+            <div class="option-card delete">
+                <div class="icon">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <h3>Delete Collections</h3>
+                <p>Remove old or unnecessary data collections. This action is irreversible, so use with caution.</p>
+                <a href="{% url 'delete_collections' %}" class="btn btn-danger">Delete Collections</a>
+            </div>
+            
+            <div class="option-card import">
+                <div class="icon">
+                    <i class="fas fa-file-import"></i>
+                </div>
+                <h3>Import Data</h3>
+                <p>Bring in data from external files or systems. Supports multiple formats including CSV and JSON.</p>
+                <a href="{% url 'import_collection' %}" class="btn btn-warning">Import Data</a>
+            </div>
+            
+            <div class="option-card export">
+                <div class="icon">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <h3>Export Data</h3>
+                <p>Save your data to external files for backup or transfer purposes in various formats.</p>
+                <a href="{% url 'export_collection' %}" class="btn btn-primary">Export Data</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Attendance Management System</p>
+        <p><i class="fas fa-envelope"></i> akashmondalofficial007@gmail.com | <i class="fas fa-phone"></i> +91 8336031104</p>
+    </footer>
 </body>
 </html>
