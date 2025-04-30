@@ -335,7 +335,7 @@ def take_attendance(request):
         
         else:
             messages.error(request, "Please fill all required fields")
-overwrite = request.POST.get("overwrite", "off")
+    overwrite = request.POST.get("overwrite", "off")
 
 
     return render(request, 'attendance.html', {
