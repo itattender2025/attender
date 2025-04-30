@@ -335,6 +335,7 @@ def take_attendance(request):
         
         else:
             messages.error(request, "Please fill all required fields")
+overwrite = request.POST.get("overwrite", "off")
 
 
     return render(request, 'attendance.html', {
@@ -355,9 +356,15 @@ def mark_attendance(request):
         collection_name = request.POST.get("collection")
         subject = request.POST.get("subject")
         date = request.POST.get("date")
+        overwrite = request.POST.get("overwrite", "off")  # Get overwrite value
+
         all_students = request.POST.getlist("all_students")
         present_students = request.POST.getlist("present_students")
-        print('all_students:', all_students, 'present_students:', present_students, 'collection_name:', collection_name, 'subject:', subject, 'date:', date, 'request.POST:', request.POST)
+
+        print('all_students:', all_students, 'present_students:', present_students,
+              'collection_name:', collection_name, 'subject:', subject,
+              'date:', date, 'overwrite:', overwrite, 'request.POST:', request.POST)
+
         if not (collection_name and subject and date and all_students):
             return HttpResponse("Missing required fields in POST request!", status=400)
 
@@ -366,9 +373,15 @@ def mark_attendance(request):
 
             for roll in all_students:
                 status = "P" if roll in present_students else "A"
+
+                update_query = (
+                    {"$set": {f"subjects.{subject}.{date}": [status]}} if overwrite == "on"
+                    else {"$push": {f"subjects.{subject}.{date}": status}}
+                )
+
                 students_collection.update_one(
                     {"roll_number": roll},
-                    {"$push": {f"subjects.{subject}.{date}": status}}
+                    update_query
                 )
 
             messages.success(request, "Attendance saved successfully!")
@@ -379,6 +392,8 @@ def mark_attendance(request):
 
     elif request.method == "GET":
         # Loading the form to mark attendance
+        overwrite = request.GET.get("overwrite", "off")
+
         collection_name = request.GET.get("collection")
         subject = request.GET.get("subject")
         date = request.GET.get("date")
@@ -405,7 +420,8 @@ def mark_attendance(request):
             "date": date,
             "collection": collection_name,
             "available_subjects": available_subjects,
-            "username": first_name
+            "username": first_name,
+            "overwrite": overwrite  # Pass to template if needed
         })
 
 
