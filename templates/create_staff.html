@@ -1,0 +1,22 @@
+{% block content %}
+    <h2 style="text-align: center; font-size: 2rem; margin-bottom: 20px; color: #333;">Create Staff</h2>
+    <form method="POST" style="max-width: 500px; margin: 0 auto; padding: 30px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);">
+        {% csrf_token %}
+        
+        <label for="first_name" style="font-size: 1rem; color: #333; margin-bottom: 8px; display: block; font-weight: 600;">First Name:</label>
+        <input type="text" name="first_name" required style="width: 100%; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; transition: border-color 0.3s ease;">
+        
+        <label for="last_name" style="font-size: 1rem; color: #333; margin-bottom: 8px; display: block; font-weight: 600;">Last Name:</label>
+        <input type="text" name="last_name" required style="width: 100%; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; transition: border-color 0.3s ease;">
+        
+        <label for="email" style="font-size: 1rem; color: #333; margin-bottom: 8px; display: block; font-weight: 600;">Email:</label>
+        <input type="email" name="email" required style="width: 100%; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; transition: border-color 0.3s ease;">
+        
+        <label for="password" style="font-size: 1rem; color: #333; margin-bottom: 8px; display: block; font-weight: 600;">Password:</label>
+        <input type="password" name="password" required style="width: 100%; padding: 12px 16px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; transition: border-color 0.3s ease;">
+        
+        <button type="submit" style="background-color: #007bff; color: #fff; padding: 14px 20px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; width: 100%; transition: background-color 0.3s ease;">
+            Create Staff
+        </button>
+    </form>
+{% endblock %}

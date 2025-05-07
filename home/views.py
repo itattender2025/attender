@@ -46,8 +46,48 @@ password_reset_collection = db["home_passwordresetrequest"]
 
 
 
+users = db["home_user"]
+sessions = db.django_session
+
+# 🔹 Custom Authentication Decorator
+
+def custom_login_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        session_token = request.COOKIES.get("session_token")
+        print("🔹 Session Token from Cookie:", session_token)
+
+        if not session_token:
+            print("❌ No session token found, redirecting to login.")
+            return redirect("login")
+
+        session = sessions.find_one({"session_token": session_token})
+
+        if not session:
+            print("❌ Session not found, redirecting to login.")
+            return redirect("login")
+
+        # Ensure session["expires_at"] is timezone-aware
+        session_expires_at = session["expires_at"]
+        
+        if isinstance(session_expires_at, str):  
+            session_expires_at = datetime.fromisoformat(session_expires_at).replace(tzinfo=timezone.utc)
+        elif session_expires_at.tzinfo is None:  
+            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)  
+
+        if session_expires_at < now():  # Compare using timezone-aware `now()`
+            print("❌ Session expired, redirecting to login.")
+            return redirect("login")
+
+        request.user = {"id": session["user_id"], "email": session["email"]}
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
 
 def signup_view(request):
+    # Check if an admin already exists
+    admin_exists = users_collection.find_one({"role": "admin"})
+
     if request.method == 'POST':
         first_name = request.POST.get("first_name", "").strip()
         last_name = request.POST.get("last_name", "").strip()
@@ -58,33 +98,91 @@ def signup_view(request):
             messages.error(request, "⚠️ All fields are required!")
             return redirect("signup")
 
-        # 🔹 Check if email already exists
+        # Check if email already exists
         existing_user = users_collection.find_one({"email": email}, {"_id": 1})
         if existing_user:
             messages.error(request, "🚫 Email already registered.")
             return redirect("signup")
 
+        # Hash password
         hashed_password = make_password(password)
 
+        # If no admin exists, create the first admin. Otherwise, create a staff user.
+        if not admin_exists:
+            role = "admin"
+        else:
+            role = "staff"
+
+        # Create user data
         user_data = {
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "username": email,
             "password": hashed_password,
+            "role": role  # Set role as admin for first user, staff for others
         }
 
-        # 🔹 Insert user into MongoDB
+        # Insert user into MongoDB
         users_collection.insert_one(user_data)
 
-        messages.success(request, "✅ Signup successful! Please log in.")
+        # If admin is created, display appropriate message
+        if role == "admin":
+            messages.success(request, "✅ Admin created successfully. Please log in.")
+        else:
+            messages.success(request, "✅ Staff account created successfully. Please log in.")
+
         return redirect("login")
 
-    return render(request, 'login.html')
+    return render(request, 'signup.html')
+
+
 from django.contrib.auth.hashers import check_password
 
 
+@custom_login_required
+def create_staff_view(request):
+    # Check if the logged-in user is an admin
+    if request.session.get('role') != 'admin':
+        messages.error(request, "❌ Only admins can create staff accounts.")
+        return redirect("index")
 
+    if request.method == 'POST':
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "").strip()
+
+        if not (first_name and last_name and email and password):
+            messages.error(request, "⚠️ All fields are required!")
+            return redirect("create_staff")
+
+        # Check if the email already exists
+        existing_user = users_collection.find_one({"email": email}, {"_id": 1})
+        if existing_user:
+            messages.error(request, "🚫 Email already registered.")
+            return redirect("create_staff")
+
+        # Hash the password
+        hashed_password = make_password(password)
+
+        # Create staff user data
+        user_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "username": email,
+            "password": hashed_password,
+            "role": "staff"  # Only create staff
+        }
+
+        # Insert the staff user into MongoDB
+        users_collection.insert_one(user_data)
+
+        messages.success(request, "✅ Staff account created successfully.")
+        return redirect("index")
+
+    return render(request, "create_staff.html")
 
 
 class MongoDBAuthBackend(BaseBackend):
@@ -170,58 +268,76 @@ def reset_password_view(request, token):
 
 
 
-users = db["home_user"]
-sessions = db.django_session
-
-# 🔹 Custom Authentication Decorator
-
-def custom_login_required(view_func):
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        session_token = request.COOKIES.get("session_token")
-        print("🔹 Session Token from Cookie:", session_token)
-
-        if not session_token:
-            print("❌ No session token found, redirecting to login.")
-            return redirect("login")
-
-        session = sessions.find_one({"session_token": session_token})
-
-        if not session:
-            print("❌ Session not found, redirecting to login.")
-            return redirect("login")
-
-        # Ensure session["expires_at"] is timezone-aware
-        session_expires_at = session["expires_at"]
-        
-        if isinstance(session_expires_at, str):  
-            session_expires_at = datetime.fromisoformat(session_expires_at).replace(tzinfo=timezone.utc)
-        elif session_expires_at.tzinfo is None:  
-            session_expires_at = session_expires_at.replace(tzinfo=timezone.utc)  
-
-        if session_expires_at < now():  # Compare using timezone-aware `now()`
-            print("❌ Session expired, redirecting to login.")
-            return redirect("login")
-
-        request.user = {"id": session["user_id"], "email": session["email"]}
-        return view_func(request, *args, **kwargs)
-
-    return wrapper
-
 
 
 # 🔹 Login View
+# def login_view(request):
+#     if request.method == "POST":
+#         email = request.POST.get("email")
+#         password = request.POST.get("password")
+#         #request.session['role'] = user.get("role", "staff")
+
+
+#         print("🔍 Full Form Data:", request.POST.dict())  # Debugging
+
+#         # Find user in MongoDB
+#         user = users.find_one({"$or": [{"email": email}, {"username": email}]})
+
+#         if user and check_password(password, user["password"]):
+#             session_token = secrets.token_hex(32)  # Generate a session token
+#             session_data = {
+#                 "user_id": str(user["_id"]),
+#                 "email": email,
+#                 "session_token": session_token,
+#                 "created_at": datetime.now(timezone.utc),
+#                 "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
+#             }
+#             if user and user.role == 'admin':
+#                 request.session['role'] = 'admin'
+#             else:
+#                 request.session['role'] = 'staff'
+#             sessions.insert_one(session_data)
+
+#             response = redirect("index")
+
+#             print("✅ Session Created:", session_data)
+#             print("✅ Setting Cookie:", session_token)
+
+#             response.set_cookie(
+#                 "session_token",
+#                 session_token,
+#                 httponly=True,
+#                 secure=False,  # Use True for HTTPS
+#                 samesite="Lax",
+#                 max_age=3600
+#             )
+#             response = redirect("index")
+#             response.set_cookie("session_token", session_token, httponly=True, max_age=3600)
+            
+#             # Store username in Django session as well for easy access
+#             request.session['username'] = email
+#             request.session['name'] = user.get("name", "")
+#             return response  
+#         else:
+#             print("❌ Invalid Login Attempt")
+#             return render(request, "login.html", {"error": "Invalid credentials"})
+
+#     return render(request, "login.html")
+from django.contrib.auth.hashers import check_password
+from datetime import datetime, timedelta, timezone
+import secrets
+
 def login_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-
+        
         print("🔍 Full Form Data:", request.POST.dict())  # Debugging
 
         # Find user in MongoDB
         user = users.find_one({"$or": [{"email": email}, {"username": email}]})
 
-        if user and check_password(password, user["password"]):
+        if user and check_password(password, user["password"]):  # Correct password comparison
             session_token = secrets.token_hex(32)  # Generate a session token
             session_data = {
                 "user_id": str(user["_id"]),
@@ -230,10 +346,17 @@ def login_view(request):
                 "created_at": datetime.now(timezone.utc),
                 "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
             }
+            # Set the role of the user in the session
+            if user.get("role") == 'admin':
+                request.session['role'] = 'admin'
+            else:
+                request.session['role'] = 'staff'
+            
+            # Store session data in MongoDB
             sessions.insert_one(session_data)
 
+            # Prepare response and set session cookie
             response = redirect("index")
-
             print("✅ Session Created:", session_data)
             print("✅ Setting Cookie:", session_token)
 
@@ -245,10 +368,8 @@ def login_view(request):
                 samesite="Lax",
                 max_age=3600
             )
-            response = redirect("index")
-            response.set_cookie("session_token", session_token, httponly=True, max_age=3600)
-            
-            # Store username in Django session as well for easy access
+
+            # Store username in Django session for easy access
             request.session['username'] = email
             request.session['name'] = user.get("name", "")
             return response  
@@ -257,6 +378,7 @@ def login_view(request):
             return render(request, "login.html", {"error": "Invalid credentials"})
 
     return render(request, "login.html")
+
 
 # 🔹 Index View (Uses Custom Authentication)
 @custom_login_required
@@ -276,6 +398,11 @@ def logout_view(request):
 
     response = redirect("login")
     response.delete_cookie("session_token")  # Remove cookie
+    response["Location"] += "?refresh=true"
+     # Add a no-cache header to prevent caching of the index page
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
     return response
 
 

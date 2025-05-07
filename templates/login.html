@@ -434,6 +434,20 @@
                 registerBox.style.display = "block";
             });
         }
+        {% comment %} if ({{ user.is_authenticated|yesno:"true,false" }} === "false") {
+            // Redirect to login if not logged in
+            window.location.href = "{% url 'login' %}";
+        }
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('refresh')) {
+            // Remove the 'refresh' query parameter to prevent continuous reloads
+            const urlWithoutRefresh = window.location.origin + window.location.pathname;
+            window.history.replaceState(null, '', urlWithoutRefresh);
+
+            // Trigger page refresh
+            window.location.reload();
+        } {% endcomment %}
     </script>
 </body>
 </html>

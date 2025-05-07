@@ -585,6 +585,12 @@
             <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
             <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
         {% endif %}
+        {% if request.session.role == 'admin' %}
+        <a href="{% url 'create_staff' %}" style="display: inline-block; background-color: #5a3ee8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 15px; font-size: 16px;">
+            Create Staff
+        </a>
+    {% endif %}
+    
         </div>
 
         <div class="hamburger">
@@ -607,6 +613,10 @@
     {% else %}
         <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
         <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
+    {% endif %}
+    
+    {% if request.session.role == 'admin' %}
+    <a href="{% url 'create_staff' %}">Create Staff</a>
     {% endif %}
     </div>
 
@@ -645,15 +655,21 @@
             <a href="{% url 'view_analytics' %}" class="btn-card btn-analytics">View Analytics</a>
         </div>
 
-        <!-- History Card -->
-        {% comment %} <div class="card card-history">
+         {% comment %} <!-- History Card -->
+         <div class="card card-history">
             <div class="card-header">
-                
+                <!-- Add any card header content here if needed -->
             </div>
-            <h2 class="card-title">Attendance History</h2>
-            <p class="card-subtitle">Access complete historical records and export data for record keeping</p>
-            <a href="{% url 'attendance_view' %}" class="btn-card btn-history">View Records</a>
+            <h2 class="card-title">Create Staff</h2>
+        
+            {% if request.session.role == 'admin' %}
+                <a href="{% url 'create_staff' %}" class="btn-card btn-history">Create New Staff</a>
+            {% else %}
+                <!-- Optionally, display a message if the user is not an admin -->
+                <p>You must be an admin to create a staff member.</p>
+            {% endif %}
         </div> {% endcomment %}
+        
 
         <!-- Featured Card -->
         <div class="card card-featured" style="border-color:rgb(60, 194, 204); background:linear-gradient(to bottom right, #e8fdf6, var(--card-bg));">
@@ -681,7 +697,16 @@
                 mobileMenu.classList.remove('active');
             }
         });
+        {% comment %} const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('refresh')) {
+            // Remove the 'refresh' query parameter to prevent continuous reloads
+            const urlWithoutRefresh = window.location.origin + window.location.pathname;
+            window.history.replaceState(null, '', urlWithoutRefresh);
 
+            // Trigger page refresh
+            window.location.reload();
+        } {% endcomment %}
     </script>
 </body>
 </html>

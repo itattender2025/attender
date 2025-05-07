@@ -27,6 +27,7 @@ urlpatterns = [
     # path('get_subjects/', views.get_subjects, name='get_subjects'),
     # path('export-subject-attendance/', views.export_subject_attendance, name='export_subject_attendance'),
     path("reset-password/<str:token>/", views.reset_password_view, name="reset_password"),
+    path('create-staff/', views.create_staff_view, name='create_staff'),
 
 
     ]
