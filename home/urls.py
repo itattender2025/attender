@@ -8,7 +8,7 @@ urlpatterns = [
     # path('select-subject/', views.select_subject, name='select_subject'),
     path('mark-attendance/', views.mark_attendance, name='mark_attendance'),
     # path('submit-attendance/', views.submit_attendance, name='submit_attendance'),
-    path('attendance/', views.attendance_view, name='attendance_view'), 
+    # path('attendance/', views.attendance_view, name='attendance_view'), 
     path('analytics/', views.view_analytics, name='view_analytics'),
      path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
@@ -28,6 +28,8 @@ urlpatterns = [
     # path('export-subject-attendance/', views.export_subject_attendance, name='export_subject_attendance'),
     path("reset-password/<str:token>/", views.reset_password_view, name="reset_password"),
     path('create-staff/', views.create_staff_view, name='create_staff'),
-
+    path('staff-list/', views.staff_list_view, name='staff_list'),
+    path("delete-user/", views.delete_user_view, name="delete_user"),
+    path("api/search-users/", views.search_users_api, name="search_users_api"),
 
     ]

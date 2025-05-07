@@ -139,10 +139,9 @@ def signup_view(request):
 
 from django.contrib.auth.hashers import check_password
 
-
 @custom_login_required
 def create_staff_view(request):
-    # Check if the logged-in user is an admin
+    # Allow only admins to access this page
     if request.session.get('role') != 'admin':
         messages.error(request, "❌ Only admins can create staff accounts.")
         return redirect("index")
@@ -152,6 +151,7 @@ def create_staff_view(request):
         last_name = request.POST.get("last_name", "").strip()
         email = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password", "").strip()
+        is_admin = request.POST.get("is_admin") == "on"  # Toggle switch value
 
         if not (first_name and last_name and email and password):
             messages.error(request, "⚠️ All fields are required!")
@@ -166,23 +166,95 @@ def create_staff_view(request):
         # Hash the password
         hashed_password = make_password(password)
 
-        # Create staff user data
+        # Role assignment based on toggle
+        role = "admin" if is_admin else "staff"
+
+        # Create user data
         user_data = {
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "username": email,
             "password": hashed_password,
-            "role": "staff"  # Only create staff
+            "role": role
         }
 
-        # Insert the staff user into MongoDB
+        # Insert into MongoDB
         users_collection.insert_one(user_data)
 
-        messages.success(request, "✅ Staff account created successfully.")
+        messages.success(request, f"✅ {role.capitalize()} account created successfully.")
         return redirect("index")
 
     return render(request, "create_staff.html")
+
+
+
+from django.http import JsonResponse
+from bson.regex import Regex
+
+@custom_login_required
+def search_users_api(request):
+    if request.session.get("role") != "admin":
+        return JsonResponse([], safe=False)
+
+    query = request.GET.get("q", "").strip().lower()
+    if not query:
+        return JsonResponse([], safe=False)
+
+    regex = Regex(f".*{query}.*", "i")  # case-insensitive match
+    users = users_collection.find(
+        {"$or": [
+            {"first_name": regex},
+            {"last_name": regex}
+        ]},
+        {"first_name": 1, "last_name": 1, "email": 1, "role": 1}
+    )
+
+    results = [{
+        "label": f"{user['first_name']} {user['last_name']} ({user['role']})",
+        "email": user["email"]
+    } for user in users]
+
+    return JsonResponse(results, safe=False)
+
+
+
+
+@custom_login_required
+def delete_user_view(request):
+    # Only admins can delete users
+    if request.session.get('role') != 'admin':
+        messages.error(request, "❌ Only admins can delete users.")
+        return redirect("index")
+
+    if request.method == 'POST':
+        email_to_delete = request.POST.get('email')
+
+        if not email_to_delete:
+            messages.error(request, "⚠️ No user selected.")
+            return redirect("delete_user")
+
+        # Don't allow deleting yourself
+        if email_to_delete == request.session.get('email'):
+            messages.error(request, "🚫 You cannot delete your own account.")
+            return redirect("delete_user")
+
+        result = users_collection.delete_one({"email": email_to_delete})
+
+        if result.deleted_count == 1:
+            messages.success(request, f"✅ User '{email_to_delete}' deleted successfully.")
+        else:
+            messages.error(request, "❌ User not found or already deleted.")
+
+        return redirect("index")
+
+    # GET request: Fetch all staff/admin users (excluding yourself)
+    users = list(users_collection.find(
+        {"role": {"$in": ["admin", "staff"]}, "email": {"$ne": request.session.get("email")}},
+        {"first_name": 1, "last_name": 1, "email": 1, "role": 1, "_id": 0}
+    ))
+
+    return render(request, "delete_user.html", {"users": users})
 
 
 class MongoDBAuthBackend(BaseBackend):
@@ -335,7 +407,7 @@ def login_view(request):
         print("🔍 Full Form Data:", request.POST.dict())  # Debugging
 
         # Find user in MongoDB
-        user = users.find_one({"$or": [{"email": email}, {"username": email}]})
+        user = users.find_one({"$or": [{"email": email}, {"username": email},]})
 
         if user and check_password(password, user["password"]):  # Correct password comparison
             session_token = secrets.token_hex(32)  # Generate a session token
@@ -371,7 +443,8 @@ def login_view(request):
 
             # Store username in Django session for easy access
             request.session['username'] = email
-            request.session['name'] = user.get("name", "")
+            request.session['first_name'] = user.get("first_name", "")
+
             return response  
         else:
             print("❌ Invalid Login Attempt")
@@ -383,7 +456,7 @@ def login_view(request):
 # 🔹 Index View (Uses Custom Authentication)
 @custom_login_required
 def index(request):
-    name = request.session.get('name', '').split()
+    name = request.session.get('first_name', '').split()
     if len(name) > 0:
         first_name = name[0]
     else:
@@ -406,9 +479,9 @@ def logout_view(request):
     return response
 
 
-
+@custom_login_required
 def take_attendance(request):
-    name = request.session.get('name', '').split()
+    name = request.session.get('first_name', '').split()
     first_name = name[0] if len(name) > 0 else "Guest"
 
     # Get all student collections
@@ -476,7 +549,7 @@ def take_attendance(request):
         "year": selected_year,
     })
 
-
+@custom_login_required
 def mark_attendance(request):
     if request.method == "POST":
         # Saving attendance logic
@@ -538,7 +611,7 @@ def mark_attendance(request):
         except Exception as e:
             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
 
-        name = request.session.get('name', '').split()
+        name = request.session.get('first_name', '').split()
         first_name = name[0] if len(name) > 0 else "Guest"
 
         return render(request, "mark_attendance.html", {
@@ -560,63 +633,63 @@ def mark_attendance(request):
 
 
 
-# Connect to MongoDB
-@custom_login_required
-def attendance_view(request):
-      # Change dynamically if needed
-    attendance_records = list(students_collection.find({}))
-    # views.py
-    all_subjects = ['MATH', 'CA', 'AUTOMATA']
+# # Connect to MongoDB
+# @custom_login_required
+# def attendance_view(request):
+#       # Change dynamically if needed
+#     attendance_records = list(students_collection.find({}))
+#     # views.py
+#     all_subjects = ['MATH', 'CA', 'AUTOMATA']
     
-    subject = request.GET.get('subject')
-    # ... rest of your view logic ...
-    students = []
-    all_dates = set()
+#     subject = request.GET.get('subject')
+#     # ... rest of your view logic ...
+#     students = []
+#     all_dates = set()
 
-    for record in attendance_records:
+#     for record in attendance_records:
 
-        student_attendance = record.get("attendance", {}).get(subject, {})
+#         student_attendance = record.get("attendance", {}).get(subject, {})
 
-        # Collect all unique dates
-        all_dates.update(student_attendance.keys())
+#         # Collect all unique dates
+#         all_dates.update(student_attendance.keys())
 
-        # Process attendance with default "A" for missing dates
-        attendance_data = {
-            date: student_attendance.get(date, "A") for date in all_dates
-        }
+#         # Process attendance with default "A" for missing dates
+#         attendance_data = {
+#             date: student_attendance.get(date, "A") for date in all_dates
+#         }
 
-        # Count total "P" occurrences (handling arrays)
-        total_present = sum(
-            sum(1 for status in (value if isinstance(value, list) else [value]) if status == "P")
-            for value in student_attendance.values()
-        )
+#         # Count total "P" occurrences (handling arrays)
+#         total_present = sum(
+#             sum(1 for status in (value if isinstance(value, list) else [value]) if status == "P")
+#             for value in student_attendance.values()
+#         )
 
-        students.append({
-            "all_subjects": all_subjects,
-            "name": record.get("name","Unknown"),
-            "roll_number": record.get("roll_number", "Unknown"),
-            "year": record.get("year", "Unknown"),
-            "attendance": attendance_data,  # Processed dictionary
-            "total_present": total_present,  # Corrected count
-        })
+#         students.append({
+#             "all_subjects": all_subjects,
+#             "name": record.get("name","Unknown"),
+#             "roll_number": record.get("roll_number", "Unknown"),
+#             "year": record.get("year", "Unknown"),
+#             "attendance": attendance_data,  # Processed dictionary
+#             "total_present": total_present,  # Corrected count
+#         })
 
-    sorted_dates = sorted(all_dates, key=lambda date: datetime.strptime(date, "%d-%m"))
-    name = request.session.get('name', '').split()
-    if len(name) > 0:
-        first_name = name[0]
-    else:
-        first_name = "Guest"
-    return render(
-        request,
-        "attendance_view.html",
-        {
-            "username": first_name,
-            "all_subjects": all_subjects,
-            "attendance_data": students,
-            "dates": sorted_dates,
-            "subject": subject
-        },
-    )
+#     sorted_dates = sorted(all_dates, key=lambda date: datetime.strptime(date, "%d-%m"))
+#     name = request.session.get('name', '').split()
+#     if len(name) > 0:
+#         first_name = name[0]
+#     else:
+#         first_name = "Guest"
+#     return render(
+#         request,
+#         "attendance_view.html",
+#         {
+#             "username": first_name,
+#             "all_subjects": all_subjects,
+#             "attendance_data": students,
+#             "dates": sorted_dates,
+#             "subject": subject
+#         },
+#     )
 
 
 # #########################################################################
@@ -630,85 +703,6 @@ def parse_date(date_str):
 
 
 
-# def view_analytics(request):
-#     student_name = request.GET.get('student_name', '').strip()
-#     start_date = request.GET.get('start_date', '').strip()
-#     end_date = request.GET.get('end_date', '').strip()
-#     subject_filter = request.GET.get('subject', '').strip()
-
-#     # Convert start_date and end_date from string to date
-#     start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
-#     end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
-
-#     # 🔹 Fetch students from MongoDB
-#     query = {}
-#     if student_name:
-#         query["name"] = {"$regex": student_name, "$options": "i"}  # Case-insensitive search
-
-#     students = list(students_collection.find(query, {"_id": 0, "name": 1, "roll_number": 1, "attendance": 1}))
-
-#     processed_students = []
-
-#     for student in students:
-#         attendance_records = []
-
-#         # Extract attendance data from MongoDB
-#         if isinstance(student.get("attendance"), dict):
-#             for subject, attendance in student["attendance"].items():
-#                 if isinstance(attendance, dict):  # Ensure it's a dictionary
-#                     for date_str, statuses in attendance.items():
-#                         try:
-#                             # Convert "26-03" to "YYYY-MM-DD" dynamically
-#                             current_year = datetime.now().year
-#                             formatted_date_str = f"{current_year}-{date_str[-2:]}-{date_str[:2]}"
-#                             parsed_date = parse_date(formatted_date_str)
-
-#                             # Ensure statuses are always a list (to handle multiple entries)
-#                             if isinstance(statuses, str):
-#                                 statuses = [statuses]  # Convert single value to list
-
-#                             for status in statuses:
-#                                 attendance_records.append({
-#                                     "date": parsed_date,
-#                                     "subject": subject,
-#                                     "status": status
-#                                 })
-#                         except ValueError:
-#                             continue  # Skip if date format is incorrect
-
-#         # Filter attendance by date range
-#         filtered_attendance = [
-#             a for a in attendance_records
-#             if a["date"] and (start_date is None or start_date <= a["date"] <= end_date)
-#         ]
-
-#         # Apply subject filter if needed
-#         if subject_filter:
-#             filtered_attendance = [a for a in filtered_attendance if a["subject"] == subject_filter]
-
-#         # Count attendance
-#         total_classes = len(filtered_attendance)
-#         attended_classes = sum(1 for a in filtered_attendance if a["status"] == "P")
-
-#         # Calculate attendance percentage
-#         attendance_percentage = (attended_classes / total_classes) * 100 if total_classes > 0 else 0
-
-#         # Color coding
-#         color_class = "green" if attendance_percentage >= 75 else "orange" if attendance_percentage >= 50 else "red"
-
-#         # Track absent dates
-#         absent_dates = [a["date"] for a in filtered_attendance if a["status"] == "A"]
-#         first_name = request.session.get('name', '').split()[0]
-#         processed_students.append({
-#             "name": student.get("name"),
-#             "roll_number": student.get("roll_number"),
-#             "attendance": f"{attended_classes} / {total_classes}",
-#             "percentage": f"{attendance_percentage:.2f}%",
-#             "color": color_class,
-#             "absent_dates": absent_dates,
-#         })
-
-#     return render(request, 'analytics.html', {"students": processed_students, "username": first_name})
 
 from datetime import datetime, date
 
@@ -843,7 +837,7 @@ def view_analytics(request):
             processed_students.append(student_data)
 
     # Get session name for greeting
-    name = request.session.get('name', '').split()
+    name = request.session.get('first_name', '').split()
     first_name = name[0] if name else "Guest"
 
     return render(request, 'analytics.html', {
@@ -915,9 +909,17 @@ def promotion_dashboard(request):
     except Exception as e:
         messages.error(request, f"System error: {str(e)}")
         return render(request, 'error.html')
-
+@custom_login_required
 def update_options(request):
     return render(request, 'update.html')
+
+
+
+def staff_list_view(request):
+    return render(request, 'update_staff.html')
+
+
+@custom_login_required
 def delete_collections(request):
     if request.method == "POST":
         academic_year = request.POST.get("academic_year")
@@ -946,6 +948,7 @@ def delete_collections(request):
 from django.core.files.storage import default_storage
 import os
 import pandas as pd
+@custom_login_required
 def import_collection(request):
     message = ""
     if request.method == "POST":
@@ -989,7 +992,7 @@ def import_collection(request):
             return redirect("index")
 
     return render(request, "import_collection.html", {"message": message})
-
+@custom_login_required
 def export_collection_page(request):
     years = ["2023-2024", "2024-2025", "2025-2026"]
     semesters = [1, 2, 3, 4, 5, 6]
@@ -1009,7 +1012,7 @@ def get_semester_with_suffix(sem):
     suffixes = {'1': '1st', '2': '2nd', '3': '3rd'}
     return suffixes.get(sem, f"{sem}th")
 
-
+@custom_login_required
 def export_collection(request):
     departments = ['it']
     semesters = ['1', '2', '3', '4', '5', '6', '7', '8']

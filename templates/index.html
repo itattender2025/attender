@@ -585,11 +585,7 @@
             <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
             <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
         {% endif %}
-        {% if request.session.role == 'admin' %}
-        <a href="{% url 'create_staff' %}" style="display: inline-block; background-color: #5a3ee8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 15px; font-size: 16px;">
-            Create Staff
-        </a>
-    {% endif %}
+        
     
         </div>
 
@@ -616,7 +612,7 @@
     {% endif %}
     
     {% if request.session.role == 'admin' %}
-    <a href="{% url 'create_staff' %}">Create Staff</a>
+    <a href="{% url 'create_staff' %}">Create User</a>
     {% endif %}
     </div>
 
@@ -655,20 +651,7 @@
             <a href="{% url 'view_analytics' %}" class="btn-card btn-analytics">View Analytics</a>
         </div>
 
-         {% comment %} <!-- History Card -->
-         <div class="card card-history">
-            <div class="card-header">
-                <!-- Add any card header content here if needed -->
-            </div>
-            <h2 class="card-title">Create Staff</h2>
         
-            {% if request.session.role == 'admin' %}
-                <a href="{% url 'create_staff' %}" class="btn-card btn-history">Create New Staff</a>
-            {% else %}
-                <!-- Optionally, display a message if the user is not an admin -->
-                <p>You must be an admin to create a staff member.</p>
-            {% endif %}
-        </div> {% endcomment %}
         
 
         <!-- Featured Card -->
@@ -680,6 +663,23 @@
             <p class="card-subtitle">Quickly mark attendance for your current class session with multiple options</p>
             <a href="{% url 'update_options' %}" class="btn-card btn-update">Update</a>
         </div>
+
+        <!-- History Card -->
+        {% if request.session.role == 'admin' %}
+        <div class="card card-history">
+            <div class="card-header">
+                <!-- Add any card header content here if needed -->
+            </div>
+            <h2 class="card-title">Create Staff</h2>
+        
+            
+                <a href="{% url 'staff_list' %}" class="btn-card btn-history">Manage Staff</a>
+            
+                <!-- Optionally, display a message if the user is not an admin -->
+               
+           
+        </div>
+        {% endif %}
     </div>
 
     <script>
