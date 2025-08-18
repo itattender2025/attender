@@ -941,7 +941,7 @@ def delete_collections(request):
             messages.success(request, f"Deleted collections: {', '.join(deleted)}")
         else:
             messages.info(request, "No collections matched the academic year.")
-        return redirect("update_options")
+        return redirect('delete_collections')
 
     return render(request, "delete_collections.html")
 
