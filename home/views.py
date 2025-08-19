@@ -530,7 +530,7 @@ def take_attendance(request):
         date = request.POST.get("date")
 
         if sem and year and subject and date:
-            collection = f"student_it_{sem}sem_{year}"
+            collection = f"student_it_{sem}_{year}"
             return redirect(f'/mark-attendance/?collection={collection}&subject={subject}&date={date}')
         
         else:
@@ -882,7 +882,7 @@ def promotion_dashboard(request):
                 messages.error(request, "Please enter at least one subject")
                 return redirect('promotion_dashboard')
             
-            new_collection_name = f"student_it_{target_semester}sem_{academic_year}"
+            new_collection_name = f"student_it_{target_semester}_{academic_year}"
             
             try:
                 student_count = create_new_collection(
@@ -1033,7 +1033,7 @@ def export_collection(request):
     subjects = []
     if selected_dept and selected_sem and selected_year:
         sem_with_suffix = get_semester_with_suffix(selected_sem)
-        collection_name = f"student_{selected_dept}_{sem_with_suffix}sem_{selected_year}"
+        collection_name = f"student_{selected_dept}_{sem_with_suffix}_{selected_year}"
         if collection_name in collections:
             try:
                 sample_doc = db[collection_name].find_one()
@@ -1050,7 +1050,7 @@ def export_collection(request):
             return HttpResponse("Missing required fields", status=400)
 
         sem_with_suffix = get_semester_with_suffix(selected_sem)
-        collection_name = f"student_{selected_dept}_{sem_with_suffix}sem_{selected_year}"
+        collection_name = f"student_{selected_dept}_{sem_with_suffix}_{selected_year}"
 
         data = []
         all_dates = set()
