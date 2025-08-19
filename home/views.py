@@ -568,7 +568,7 @@ def take_attendance(request):
 @custom_login_required
 def mark_attendance(request):
     if request.method == "POST":
-        # Saving attendance logic (This part remains unchanged)
+        # POST logic remains unchanged and works perfectly.
         collection_name = request.POST.get("collection")
         subject = request.POST.get("subject")
         date = request.POST.get("date")
@@ -577,29 +577,18 @@ def mark_attendance(request):
         all_students = request.POST.getlist("all_students")
         present_students = request.POST.getlist("present_students")
 
-        print('all_students:', all_students, 'present_students:', present_students,
-              'collection_name:', collection_name, 'subject:', subject,
-              'date:', date, 'overwrite:', overwrite, 'request.POST:', request.POST)
-
         if not (collection_name and subject and date and all_students):
             return HttpResponse("Missing required fields in POST request!", status=400)
 
         try:
             students_collection = db[collection_name]
-
             for roll in all_students:
                 status = "P" if roll in present_students else "A"
-
                 update_query = (
                     {"$set": {f"subjects.{subject}.{date}": [status]}} if overwrite == "on"
                     else {"$push": {f"subjects.{subject}.{date}": status}}
                 )
-
-                students_collection.update_one(
-                    {"roll_number": roll},
-                    update_query
-                )
-
+                students_collection.update_one({"roll_number": roll}, update_query)
             messages.success(request, "Attendance saved successfully!")
             return redirect("index")
 
@@ -607,27 +596,42 @@ def mark_attendance(request):
             return HttpResponse(f"Error saving attendance: {str(e)}", status=500)
 
     elif request.method == "GET":
-        # Loading the form to mark attendance (This part is updated)
-        overwrite = request.GET.get("overwrite", "off")
-
+        # GET logic is updated to handle group filtering.
         collection_name = request.GET.get("collection")
         subject = request.GET.get("subject")
         date = request.GET.get("date")
+        group = request.GET.get("group") # Get the selected group (A, B, or None)
+        overwrite = request.GET.get("overwrite", "off")
+        
         if not (collection_name and subject and date):
             return HttpResponse("Missing required parameters!", status=400)
 
         try:
             students_collection = db[collection_name]
             
-            # ✅ UPDATED QUERY: Fetch only students enrolled in the selected subject
+            # Base query to find students enrolled in the subject.
             query = {f"subjects.{subject}": {"$exists": True}}
-            students = list(students_collection.find(query, {"_id": 0}).sort("roll_number", 1))
 
-            available_subjects = []
-            if students:
-                # This logic can remain, though it's less critical now
-                available_subjects = list(students[0].get('subjects', {}).keys())
+            # --- NEW GROUP FILTERING LOGIC ---
+            if group in ['A', 'B']:
+                group_doc = lab_groups_collection.find_one({"collection_name": collection_name})
+                group_rolls = []
+                if group_doc:
+                    if group == 'A':
+                        group_rolls = group_doc.get('group_a_rolls', [])
+                    elif group == 'B':
+                        group_rolls = group_doc.get('group_b_rolls', [])
+                
+                # Add the group roll numbers to the main query
+                if group_rolls:
+                    query["roll_number"] = {"$in": group_rolls}
+                else:
+                    # If group is selected but no rolls are defined, show no one.
+                    query["roll_number"] = {"$in": []} 
+            # --- END OF NEW LOGIC ---
 
+            students = list(students_collection.find(query, {"_id": 0}))
+            
         except Exception as e:
             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
 
@@ -639,11 +643,10 @@ def mark_attendance(request):
             "subject": subject,
             "date": date,
             "collection": collection_name,
-            "available_subjects": available_subjects,
             "username": first_name,
-            "overwrite": overwrite
+            "overwrite": overwrite,
+            "group": group # Pass the current group to the template
         })
-
 # #########################################################################
 
 def parse_date(date_str):
@@ -1113,9 +1116,58 @@ def delete_collections(request):
 
     return render(request, "delete_collections.html")
 
+# from django.core.files.storage import default_storage
+# import os
+# import pandas as pd
+# @custom_login_required
+# def import_collection(request):
+#     message = ""
+#     if request.method == "POST":
+#         dept = request.POST.get("department")
+#         semester = request.POST.get("semester")
+#         academic_year = request.POST.get("academic_year")
+
+#         # Collect all subjects from dynamically generated fields
+#         subject_names = []
+#         for key in request.POST:
+#             if key.startswith("subject_") and request.POST[key].strip():
+#                 subject_names.append(request.POST[key].strip())
+
+#         uploaded_file = request.FILES.get("file")
+#         if uploaded_file:
+#             file_path = default_storage.save(uploaded_file.name, uploaded_file)
+#             abs_path = os.path.join(default_storage.location, file_path)
+
+#             ext = os.path.splitext(file_path)[-1].lower()
+#             df = pd.read_excel(abs_path) if ext == ".xlsx" else pd.read_csv(abs_path)
+
+#             collection_name = f"student_{dept}_{semester}_{academic_year}".lower()
+#             student_collection = db[collection_name]
+
+#             documents = []
+#             for _, row in df.iterrows():
+#                 # Create a dictionary of subjects, each initialized as an empty dict
+#                 subject_data = {subject: {} for subject in subject_names}
+
+#                 doc = {
+#                     "name": str(row["name"]),
+#                     "roll_number": str(row["roll_number"]),
+#                     "current_semester": semester,
+#                     "academic_year": academic_year,
+#                     "subjects": subject_data
+#                 }
+#                 documents.append(doc)
+
+#             student_collection.insert_many(documents)
+#             messages.success(request, "Collection imported successfully!")
+#             return redirect("index")
+
+#     return render(request, "import_collection.html", {"message": message})
+
 from django.core.files.storage import default_storage
 import os
 import pandas as pd
+
 @custom_login_required
 def import_collection(request):
     message = ""
@@ -1124,7 +1176,6 @@ def import_collection(request):
         semester = request.POST.get("semester")
         academic_year = request.POST.get("academic_year")
 
-        # Collect all subjects from dynamically generated fields
         subject_names = []
         for key in request.POST:
             if key.startswith("subject_") and request.POST[key].strip():
@@ -1138,16 +1189,42 @@ def import_collection(request):
             ext = os.path.splitext(file_path)[-1].lower()
             df = pd.read_excel(abs_path) if ext == ".xlsx" else pd.read_csv(abs_path)
 
+            # ##################################################
+            # ##          NEW SORTING LOGIC ADDED HERE        ##
+            # ##################################################
+            try:
+                # 1. Convert 'roll_number' to a numeric type for correct sorting.
+                #    'coerce' will turn any non-numeric values into NaN (Not a Number).
+                df['roll_number'] = pd.to_numeric(df['roll_number'], errors='coerce')
+
+                # 2. Remove any rows that had invalid roll numbers.
+                df.dropna(subset=['roll_number'], inplace=True)
+
+                # 3. Convert the column to integer type.
+                df['roll_number'] = df['roll_number'].astype(int)
+
+                # 4. Sort the entire DataFrame by the 'roll_number' column.
+                df.sort_values(by='roll_number', inplace=True)
+
+            except KeyError:
+                messages.error(request, "The uploaded file must contain a 'roll_number' column.")
+                return render(request, "import_collection.html", {"message": message})
+            # ##################################################
+            # ##              END OF NEW LOGIC                ##
+            # ##################################################
+
             collection_name = f"student_{dept}_{semester}_{academic_year}".lower()
             student_collection = db[collection_name]
 
             documents = []
             for _, row in df.iterrows():
-                # Create a dictionary of subjects, each initialized as an empty dict
                 subject_data = {subject: {} for subject in subject_names}
 
                 doc = {
                     "name": str(row["name"]),
+                    # The roll_number is now a number, but we convert back to string
+                    # to match the schema we fixed earlier. If you changed your DB
+                    # to use numbers, you can remove str().
                     "roll_number": str(row["roll_number"]),
                     "current_semester": semester,
                     "academic_year": academic_year,
@@ -1160,8 +1237,6 @@ def import_collection(request):
             return redirect("index")
 
     return render(request, "import_collection.html", {"message": message})
-
-
 
 # Add this with your other views in views.py
 
@@ -1209,7 +1284,7 @@ def get_students_api(request):
     if not collection_name:
         return JsonResponse([], safe=False)
 
-    students = list(db[collection_name].find({}, {"name": 1, "roll_number": 1, "_id": 0}).sort("roll_number", 1))
+    students = list(db[collection_name].find({}, {"name": 1, "roll_number": 1, "_id": 0}))
     return JsonResponse(students, safe=False)
 
 
