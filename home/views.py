@@ -495,9 +495,9 @@ def take_attendance(request):
         if len(parts) >= 4:
             sem_part = parts[2]
             year_part = parts[3]
-
-            if "sem" in sem_part:
-                semesters.append(sem_part.replace("sem", ""))
+            for part in parts:
+                if part.endswith(("st", "nd", "rd", "th")):
+                    semesters.append(part)
             if "-" in year_part:
                 academic_years.append(year_part)
 
