@@ -510,7 +510,7 @@ def take_attendance(request):
     subject_list = []
 
     if selected_sem and selected_year:
-        collection_name = f"student_it_{selected_sem}sem_{selected_year}"
+        collection_name = f"student_it_{selected_sem}_{selected_year}"
         if collection_name in collections:
             pipeline = [
                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
