@@ -19,593 +19,126 @@
             --radius: 16px;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--background); padding-top: 80px; min-height: 100vh; }
+        .navbar { background: var(--card-bg); box-shadow: 0 4px 30px rgba(0, 150, 232, 0.15); position: fixed; top: 0; width: 100%; z-index: 1000; padding: 0 5%; display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .left-nav { display: flex; align-items: center; gap: 40px; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: var(--secondary); text-decoration: none; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .logo span { color: var(--primary); }
+        .nav-links { display: flex; gap: 35px; }
+        .nav-links a { color: var(--text); text-decoration: none; font-weight: 500; font-size: 1.1rem; position: relative; transition: all 0.3s ease; padding: 8px 0; white-space: nowrap; }
+        .nav-links a:hover { color: var(--secondary); }
+        .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 0.3s ease; border-radius: 2px; }
+        .nav-links a:hover::after { width: 100%; }
+        .container { background: var(--card-bg); padding: 40px; border-radius: var(--radius); width: 90%; max-width: 1000px; margin: 40px auto; box-shadow: 0 8px 24px rgba(0, 150, 232, 0.15); border: 1px solid var(--border); }
+        h2 { text-align: center; margin-bottom: 20px; color: var(--secondary); font-size: 2rem; font-weight: 700; }
+        .info-bar { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; flex-wrap: wrap; }
+        .info-item { font-size: 1.1rem; color: var(--text); }
+        .info-item strong { color: var(--secondary); }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+        th, td { padding: 15px; text-align: center; border-bottom: 1px solid #e0e0e0; }
+        th { background-color: var(--secondary); color: white; font-weight: 600; }
+        tr:nth-child(even) { background-color: rgba(8, 150, 232, 0.05); }
+        tr:hover { background-color: rgba(8, 150, 232, 0.1); }
+        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--secondary); cursor: pointer; }
+        .button-group { display: flex; justify-content: center; gap: 20px; margin-top: 30px; }
+        .btn { padding: 12px 30px; border-radius: var(--radius); font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; border: none; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; transform: translateY(-2px); }
+        .btn-success { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(22, 102, 214, 0.3); }
+        .no-students { text-align: center; color: #dc3545; font-size: 1.2rem; margin: 30px 0; }
 
-        body {
-            background: var(--background);
-            padding-top: 80px;
-            min-height: 100vh;
-        }
+        /* Styles for the overwrite toggle switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; background-color: #ccc; border-radius: 24px; top: 0; left: 0; right: 0; bottom: 0; transition: 0.4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.4s; }
+        input:checked + .slider { background-color: #28a745; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 34px; }
 
-        /* Modern Navbar */
-        .navbar {
-            background: var(--card-bg);
-            box-shadow: 0 4px 30px rgba(0, 150, 232, 0.15);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 0 5%;
+        /* */
+        /* */
+        /* */
+        .group-selector {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60px;
+            justify-content: center;
+            margin-bottom: 30px;
         }
-
-        .left-nav {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--secondary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-
-        .logo span {
-            color: var(--primary);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 35px;
-        }
-
-        .nav-links a {
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1.1rem;
-            position: relative;
-            transition: all 0.3s ease;
-            padding: 8px 0;
-            white-space: nowrap;
-        }
-
-        .nav-links a:hover {
-            color: var(--secondary);
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            transition: width 0.3s ease;
-            border-radius: 2px;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .active {
-            color: var(--secondary) !important;
-            font-weight: 600 !important;
-        }
-
-        .active::after {
-            width: 100% !important;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 20px;
-        }
-
-        .btn-nav {
-            padding: 10px 24px;
+        .group-selector .btn-group {
             border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            text-decoration: none;
-            white-space: nowrap;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--secondary);
-            border: 2px solid var(--secondary);
+        .group-selector .btn {
+            border: none;
+            padding: 10px 25px;
+            background-color: #e9ecef;
+            color: var(--text);
+            font-weight: 500;
+            border-radius: 0;
+            transition: all 0.3s ease;
         }
-
-        .btn-outline:hover {
+        .group-selector .btn.active, .group-selector .btn:hover {
             background: var(--secondary);
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(22, 102, 214, 0.2);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 240, 255, 0.3);
-        }
-
-        /* Mobile Menu */
-        .hamburger {
-            display: none;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        .mobile-menu {
-            display: none;
-            position: fixed;
-            top: 80px;
-            left: 0;
-            width: 100%;
-            background: var(--card-bg);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            z-index: 999;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .mobile-menu.active {
-            display: flex;
-        }
-
-        .mobile-menu a {
-            padding: 12px;
-            border-radius: 8px;
-            transition: background 0.3s;
-        }
-
-        .mobile-menu a:hover {
-            background: rgba(22, 102, 214, 0.1);
-        }
-
-        /* Main Content */
-        .container {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: var(--radius);
-            width: 90%;
-            max-width: 1000px;
-            margin: 40px auto;
-            box-shadow: 0 8px 24px rgba(0, 150, 232, 0.15);
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: var(--secondary);
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .info-bar {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .info-item {
-            font-size: 1.1rem;
-            color: var(--text);
-        }
-
-        .info-item strong {
-            color: var(--secondary);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 30px 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        th, td {
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        th {
-            background-color: var(--secondary);
-            color: white;
-            font-weight: 600;
-        }
-
-        tr:nth-child(even) {
-            background-color: rgba(8, 150, 232, 0.05);
-        }
-
-        tr:hover {
-            background-color: rgba(8, 150, 232, 0.1);
-        }
-
-        input[type="checkbox"] {
-            transform: scale(1.5);
-            accent-color: var(--secondary);
-            cursor: pointer;
-        }
-
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(22, 102, 214, 0.3);
-        }
-
-        .no-students {
-            text-align: center;
-            color: #dc3545;
-            font-size: 1.2rem;
-            margin: 30px 0;
-        }
-
-        /* Loader Styles */
-        .loader {
-            width: 50px;
-            aspect-ratio: 1;
-            --_c: no-repeat radial-gradient(farthest-side, var(--secondary) 92%, #0000);
-            background: 
-                var(--_c) top,
-                var(--_c) left,
-                var(--_c) right,
-                var(--_c) bottom;
-            background-size: 12px 12px;
-            animation: l7 1s infinite linear;
-        }
-
-        /* Loader Wrapper */
-        .loader-wrapper {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: rgba(255, 255, 255, 0.9);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 9999;
-        }
-
-        @keyframes l7 {
-            to { transform: rotate(180deg); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .navbar {
-                padding: 0 20px;
-                height: 70px;
-            }
-            
-            .nav-links {
-                gap: 25px;
-            }
-            
-            h2 {
-                font-size: 1.8rem;
-            }
-        }
-
-        @media (max-width: 850px) {
-            .nav-links {
-                display: none;
-            }
-            
-            .hamburger {
-                display: block;
-            }
-            
-            .nav-buttons {
-                display: none;
-            }
-            
-            .mobile-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                margin-top: 10px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 30px 20px;
-                width: 95%;
-            }
-            
-            .info-bar {
-                flex-direction: column;
-                gap: 10px;
-                align-items: center;
-            }
-            
-            th, td {
-                padding: 12px 8px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .container {
-                padding: 25px 15px;
-            }
-            
-            h2 {
-                font-size: 1.6rem;
-            }
-            
-            .button-group {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .btn {
-                width: 100%;
-            }
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            border-radius: 50px;
-            background: rgba(108, 77, 246, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .user-profile:hover {
-            background: rgba(108, 77, 246, 0.2);
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        }
-
-        .username {
-            font-weight: 600;
-            color: var(--primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 120px;
-        }
-
-        .mobile-menu .user-profile {
-            margin-bottom: 15px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 992px) {
-            .username {
-                max-width: 100px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .user-profile {
-                padding: 6px 12px;
-            }
-            
-            .user-avatar {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-            
-            .username {
-                font-size: 0.95rem;
-                max-width: 80px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .username {
-                display: none;
-            }
-            
-            .mobile-menu .username {
-                display: block;
-                max-width: 100%;
-            }
-        }
-    </style>
-       
-<!-- CSS for Toggle Switch -->
-<style>
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      background-color: #ccc;
-      border-radius: 24px;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      transition: 0.4s;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      border-radius: 50%;
-      transition: 0.4s;
-    }
-    input:checked + .slider {
-      background-color: #28a745;
-    }
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-    .slider.round {
-      border-radius: 34px;
-    }
     </style>
 </head>
 <body>
-    <!-- Modern Navbar -->
     <nav class="navbar">
         <div class="left-nav">
             <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
-            
-            <div class="nav-links">
-                <a href="{% url 'index' %}">Home</a>
-            </div>
         </div>
-        <div class="nav-buttons">
-        {% if user %}
-            <div class="user-profile">
-                <div class="user-avatar">{{ username|first|upper }}</div>
-                <span class="username">{{ username }}</span>
-            </div>
-            <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
-        {% else %}
-            <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
-            <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
-        {% endif %}
-        </div>
-
-        <div class="hamburger">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 12H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 6H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 18H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
+        <div>
+            <a href="{% url 'index' %}" class="btn btn-secondary">Home</a>
         </div>
     </nav>
-    
-    <!-- Mobile Menu -->
-    {% if user %}
-    <div class="mobile-menu" id="mobileMenu">
-        <div class="user-profile">
-            <div class="user-avatar">{{ username|first|upper }}</div>
-            <span class="username">{{ username }}</span>
-        </div>
-        <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
-        <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
-    {% endif %}
-    </div>
 
-    <!-- Main Content -->
     <div class="container">
         <h2>Mark Attendance</h2>
-    
+
+        -->
+        -->
+        -->
+        <div class="group-selector">
+            <div class="btn-group" role="group">
+                <a href="?collection={{ collection }}&subject={{ subject }}&date={{ date }}" class="btn {% if not group %}active{% endif %}">
+                    Full Class
+                </a>
+                <a href="?collection={{ collection }}&subject={{ subject }}&date={{ date }}&group=A" class="btn {% if group == 'A' %}active{% endif %}">
+                    Group A
+                </a>
+                <a href="?collection={{ collection }}&subject={{ subject }}&date={{ date }}&group=B" class="btn {% if group == 'B' %}active{% endif %}">
+                    Group B
+                </a>
+            </div>
+        </div>
+
         <div class="info-bar">
             <div class="info-item"><strong>Subject:</strong> {{ subject }}</div>
             <div class="info-item"><strong>Date:</strong> {{ date }}</div>
         </div>
     
         {% if students %}
-            <form method="POST" onsubmit="showLoader()">
+            <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="collection" value="{{ collection }}">
                 <input type="hidden" name="date" value="{{ date }}">
-                <input type="hidden" name="subject" value="{{ subject }}"> 
-     <!-- Overwrite Toggle Switch -->
-<div style="margin: 10px 0;">
-    <label style="display: flex; align-items: center;">
-        <span style="margin-right: 10px;"><strong>Overwrite Attendance:</strong></span>
-        <label class="switch">
-            <input type="checkbox" name="overwrite" {% if overwrite == 'on' %}checked{% endif %}>
-            <span class="slider round"></span>
-        </label>
-    </label>
-</div>
+                <input type="hidden" name="subject" value="{{ subject }}">
+
+                <div style="margin: 10px 0; display: flex; justify-content: center;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <span style="margin-right: 10px;"><strong>Overwrite Attendance:</strong></span>
+                        <label class="switch">
+                            <input type="checkbox" name="overwrite" {% if overwrite == 'on' %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                    </label>
+                </div>
+
                 <table>
                     <tr>
                         <th>Roll No</th>
@@ -630,25 +163,20 @@
                 </div>
             </form>
         {% else %}
-            <p class="no-students">No students found for the selected year.</p>
+            <p class="no-students">
+                {% if group %}
+                    No students found for Group {{ group }}. Please define the group in Data Management.
+                {% else %}
+                    No students found for this subject.
+                {% endif %}
+            </p>
         {% endif %}
     </div>
     
-    <!-- Loader Overlay -->
-    <div class="loader-wrapper">
-        <div class="loader"></div>
-    </div>
-    
     <script>
-        // Check all checkboxes
         function checkAll() {
             let checkboxes = document.querySelectorAll('input[type="checkbox"][name="present_students"]');
             checkboxes.forEach(checkbox => checkbox.checked = true);
-        }
-    
-        // Show loader on form submission
-        function showLoader() {
-            document.querySelector('.loader-wrapper').style.display = 'flex';
         }
     </script>    
 </body>

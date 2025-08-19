@@ -336,65 +336,6 @@ def reset_password_view(request, token):
 
 
 
-
-
-
-
-
-
-# 🔹 Login View
-# def login_view(request):
-#     if request.method == "POST":
-#         email = request.POST.get("email")
-#         password = request.POST.get("password")
-#         #request.session['role'] = user.get("role", "staff")
-
-
-#         print("🔍 Full Form Data:", request.POST.dict())  # Debugging
-
-#         # Find user in MongoDB
-#         user = users.find_one({"$or": [{"email": email}, {"username": email}]})
-
-#         if user and check_password(password, user["password"]):
-#             session_token = secrets.token_hex(32)  # Generate a session token
-#             session_data = {
-#                 "user_id": str(user["_id"]),
-#                 "email": email,
-#                 "session_token": session_token,
-#                 "created_at": datetime.now(timezone.utc),
-#                 "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
-#             }
-#             if user and user.role == 'admin':
-#                 request.session['role'] = 'admin'
-#             else:
-#                 request.session['role'] = 'staff'
-#             sessions.insert_one(session_data)
-
-#             response = redirect("index")
-
-#             print("✅ Session Created:", session_data)
-#             print("✅ Setting Cookie:", session_token)
-
-#             response.set_cookie(
-#                 "session_token",
-#                 session_token,
-#                 httponly=True,
-#                 secure=False,  # Use True for HTTPS
-#                 samesite="Lax",
-#                 max_age=3600
-#             )
-#             response = redirect("index")
-#             response.set_cookie("session_token", session_token, httponly=True, max_age=3600)
-            
-#             # Store username in Django session as well for easy access
-#             request.session['username'] = email
-#             request.session['name'] = user.get("name", "")
-#             return response  
-#         else:
-#             print("❌ Invalid Login Attempt")
-#             return render(request, "login.html", {"error": "Invalid credentials"})
-
-#     return render(request, "login.html")
 from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta, timezone
 import secrets
@@ -549,14 +490,89 @@ def take_attendance(request):
         "year": selected_year,
     })
 
+# @custom_login_required
+# def mark_attendance(request):
+#     if request.method == "POST":
+#         # Saving attendance logic
+#         collection_name = request.POST.get("collection")
+#         subject = request.POST.get("subject")
+#         date = request.POST.get("date")
+#         overwrite = request.POST.get("overwrite", "off")  # Get overwrite value
+
+#         all_students = request.POST.getlist("all_students")
+#         present_students = request.POST.getlist("present_students")
+
+#         print('all_students:', all_students, 'present_students:', present_students,
+#               'collection_name:', collection_name, 'subject:', subject,
+#               'date:', date, 'overwrite:', overwrite, 'request.POST:', request.POST)
+
+#         if not (collection_name and subject and date and all_students):
+#             return HttpResponse("Missing required fields in POST request!", status=400)
+
+#         try:
+#             students_collection = db[collection_name]
+
+#             for roll in all_students:
+#                 status = "P" if roll in present_students else "A"
+
+#                 update_query = (
+#                     {"$set": {f"subjects.{subject}.{date}": [status]}} if overwrite == "on"
+#                     else {"$push": {f"subjects.{subject}.{date}": status}}
+#                 )
+
+#                 students_collection.update_one(
+#                     {"roll_number": roll},
+#                     update_query
+#                 )
+
+#             messages.success(request, "Attendance saved successfully!")
+#             return redirect("index")
+
+#         except Exception as e:
+#             return HttpResponse(f"Error saving attendance: {str(e)}", status=500)
+
+#     elif request.method == "GET":
+#         # Loading the form to mark attendance
+#         overwrite = request.GET.get("overwrite", "off")
+
+#         collection_name = request.GET.get("collection")
+#         subject = request.GET.get("subject")
+#         date = request.GET.get("date")
+#         if not (collection_name and subject and date):
+#             return HttpResponse("Missing required parameters!", status=400)
+
+#         try:
+#             students_collection = db[collection_name]
+#             students = list(students_collection.find({}, {"_id": 0}))
+
+#             available_subjects = []
+#             if students:
+#                 available_subjects = list(students[0].get('subjects', {}).keys())
+
+#         except Exception as e:
+#             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
+
+#         name = request.session.get('first_name', '').split()
+#         first_name = name[0] if len(name) > 0 else "Guest"
+
+#         return render(request, "mark_attendance.html", {
+#             "students": students,
+#             "subject": subject,
+#             "date": date,
+#             "collection": collection_name,
+#             "available_subjects": available_subjects,
+#             "username": first_name,
+#             "overwrite": overwrite  # Pass to template if needed
+#         })
+
 @custom_login_required
 def mark_attendance(request):
     if request.method == "POST":
-        # Saving attendance logic
+        # Saving attendance logic (This part remains unchanged)
         collection_name = request.POST.get("collection")
         subject = request.POST.get("subject")
         date = request.POST.get("date")
-        overwrite = request.POST.get("overwrite", "off")  # Get overwrite value
+        overwrite = request.POST.get("overwrite", "off")
 
         all_students = request.POST.getlist("all_students")
         present_students = request.POST.getlist("present_students")
@@ -591,7 +607,7 @@ def mark_attendance(request):
             return HttpResponse(f"Error saving attendance: {str(e)}", status=500)
 
     elif request.method == "GET":
-        # Loading the form to mark attendance
+        # Loading the form to mark attendance (This part is updated)
         overwrite = request.GET.get("overwrite", "off")
 
         collection_name = request.GET.get("collection")
@@ -602,10 +618,14 @@ def mark_attendance(request):
 
         try:
             students_collection = db[collection_name]
-            students = list(students_collection.find({}, {"_id": 0}))
+            
+            # ✅ UPDATED QUERY: Fetch only students enrolled in the selected subject
+            query = {f"subjects.{subject}": {"$exists": True}}
+            students = list(students_collection.find(query, {"_id": 0}).sort("roll_number", 1))
 
             available_subjects = []
             if students:
+                # This logic can remain, though it's less critical now
                 available_subjects = list(students[0].get('subjects', {}).keys())
 
         except Exception as e:
@@ -621,76 +641,8 @@ def mark_attendance(request):
             "collection": collection_name,
             "available_subjects": available_subjects,
             "username": first_name,
-            "overwrite": overwrite  # Pass to template if needed
+            "overwrite": overwrite
         })
-
-
-
-
-
-
-
-
-
-
-# # Connect to MongoDB
-# @custom_login_required
-# def attendance_view(request):
-#       # Change dynamically if needed
-#     attendance_records = list(students_collection.find({}))
-#     # views.py
-#     all_subjects = ['MATH', 'CA', 'AUTOMATA']
-    
-#     subject = request.GET.get('subject')
-#     # ... rest of your view logic ...
-#     students = []
-#     all_dates = set()
-
-#     for record in attendance_records:
-
-#         student_attendance = record.get("attendance", {}).get(subject, {})
-
-#         # Collect all unique dates
-#         all_dates.update(student_attendance.keys())
-
-#         # Process attendance with default "A" for missing dates
-#         attendance_data = {
-#             date: student_attendance.get(date, "A") for date in all_dates
-#         }
-
-#         # Count total "P" occurrences (handling arrays)
-#         total_present = sum(
-#             sum(1 for status in (value if isinstance(value, list) else [value]) if status == "P")
-#             for value in student_attendance.values()
-#         )
-
-#         students.append({
-#             "all_subjects": all_subjects,
-#             "name": record.get("name","Unknown"),
-#             "roll_number": record.get("roll_number", "Unknown"),
-#             "year": record.get("year", "Unknown"),
-#             "attendance": attendance_data,  # Processed dictionary
-#             "total_present": total_present,  # Corrected count
-#         })
-
-#     sorted_dates = sorted(all_dates, key=lambda date: datetime.strptime(date, "%d-%m"))
-#     name = request.session.get('name', '').split()
-#     if len(name) > 0:
-#         first_name = name[0]
-#     else:
-#         first_name = "Guest"
-#     return render(
-#         request,
-#         "attendance_view.html",
-#         {
-#             "username": first_name,
-#             "all_subjects": all_subjects,
-#             "attendance_data": students,
-#             "dates": sorted_dates,
-#             "subject": subject
-#         },
-#     )
-
 
 # #########################################################################
 
@@ -704,11 +656,156 @@ def parse_date(date_str):
 
 
 
-from datetime import datetime, date
+# from datetime import datetime, date
 
-from .mongo_utils import get_db_connection, get_all_student_collections
+# from .mongo_utils import get_db_connection, get_all_student_collections
 
 
+# @custom_login_required
+# def view_analytics(request):
+#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+
+#     # Get filter parameters
+#     student_name = request.GET.get("student_name", "").strip()
+#     subject_filter = request.GET.get("subject", "").strip()
+#     start_date_str = request.GET.get("start_date", "")
+#     end_date_str = request.GET.get("end_date", "")
+#     min_percentage_str = request.GET.get("min_percentage", "0").strip()
+#     selected_collection = request.GET.get("collection", "")
+
+#     # Convert dates
+#     try:
+#         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+#         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+#     except ValueError:
+#         start_date, end_date = None, None
+        
+#     min_percentage = float(min_percentage_str) if min_percentage_str else 0
+
+#     processed_students = []
+#     subject_list = []
+
+#     if selected_collection and selected_collection in collections:
+#         students_collection = db[selected_collection]
+
+#         # Dynamically get subject list
+#         try:
+#             pipeline = [
+#                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
+#                 {"$unwind": "$subjects"},
+#                 {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
+#             ]
+#             result = list(students_collection.aggregate(pipeline))
+#             subject_list = result[0]['subjects'] if result else []
+#         except Exception as e:
+#             print("DEBUG >> Subject extraction error:", e)
+#             subject_list = []
+
+#         # Build student query
+#         query = {}
+#         if student_name:
+#             query["name"] = {"$regex": student_name, "$options": "i"}
+
+#         students_data = list(students_collection.find(query, {
+#             "_id": 0, "name": 1, "roll_number": 1, "subjects": 1
+#         }))
+
+#         for student in students_data:
+#             subject_stats = {}
+#             absent_dates = []
+#             subjects_to_check = [subject_filter] if subject_filter else subject_list
+
+#             for subject in subjects_to_check:
+#                 subject_stats[subject] = {"present": 0, "total": 0}
+
+#             if isinstance(student.get("subjects"), dict):
+#                 for subject in subjects_to_check:
+#                     subject_data = student["subjects"].get(subject, {})
+                    
+#                     # Handle both direct dates and nested attendance objects
+#                     attendance_records = {}
+#                     if isinstance(subject_data, dict):
+#                         attendance_records = subject_data
+#                     elif isinstance(subject_data.get("attendance"), dict):
+#                         attendance_records = subject_data["attendance"]
+                    
+#                     for date_str, status in attendance_records.items():
+#                         try:
+#                             # Parse date in YYYY-MM-DD format
+#                             parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                            
+#                             if start_date and parsed_date < start_date:
+#                                 continue
+#                             if end_date and parsed_date > end_date:
+#                                 continue
+                            
+#                             # Handle different status formats
+#                             statuses = []
+#                             if isinstance(status, str):
+#                                 statuses = [status]
+#                             elif isinstance(status, list):
+#                                 statuses = status
+                            
+#                             for s in statuses:
+#                                 if subject not in subject_stats:
+#                                     subject_stats[subject] = {"present": 0, "total": 0}
+#                                 subject_stats[subject]["total"] += 1
+#                                 if s == "P":
+#                                     subject_stats[subject]["present"] += 1
+#                                 else:
+#                                     absent_dates.append(date_str)  # Store original date string
+#                         except (ValueError, AttributeError):
+#                             continue
+
+#             # Calculate percentages
+#             percentages = {}
+#             for subject in subjects_to_check:
+#                 stats = subject_stats.get(subject, {"present": 0, "total": 0})
+#                 percentages[subject] = round((stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0, 2)
+
+#             total_classes = sum(stats["total"] for stats in subject_stats.values())
+#             attended_classes = sum(stats["present"] for stats in subject_stats.values())
+#             overall_percentage = round((attended_classes / total_classes * 100) if total_classes > 0 else 0, 2)
+
+#             if overall_percentage < min_percentage:
+#                 continue
+
+#             # Prepare student record
+#             student_data = {
+#                 "name": student.get("name", "Unknown"),
+#                 "roll_number": student.get("roll_number", "Unknown"),
+#                 "overall_percentage": overall_percentage,
+#                 "absent_dates": list(set(absent_dates)) or ["No absences"],
+#             }
+
+#             if subject_filter:
+#                 student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
+#             else:
+#                 student_data["subject_percentages_flat"] = [
+#                     {"name": subject, "percent": percentages.get(subject, 0)}
+#                     for subject in subject_list
+#                 ]
+
+#             processed_students.append(student_data)
+
+#     # Get session name for greeting
+#     name = request.session.get('first_name', '').split()
+#     first_name = name[0] if name else "Guest"
+
+#     return render(request, 'analytics.html', {
+#         "students": processed_students,
+#         "username": first_name,
+#         "subject_filter": subject_filter,
+#         "collections": collections,
+#         "selected_collection": selected_collection,
+#         "subject_list": subject_list,
+#         "filters": {
+#             "student_name": student_name,
+#             "start_date": start_date_str,
+#             "end_date": end_date_str,
+#             "min_percentage": min_percentage_str
+#         }
+#     })
 @custom_login_required
 def view_analytics(request):
     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
@@ -718,17 +815,19 @@ def view_analytics(request):
     subject_filter = request.GET.get("subject", "").strip()
     start_date_str = request.GET.get("start_date", "")
     end_date_str = request.GET.get("end_date", "")
-    min_percentage_str = request.GET.get("min_percentage", "0").strip()
     selected_collection = request.GET.get("collection", "")
+    
+    # FIX 1: Changed percentage filter to 'max_percentage' for clarity and correct logic.
+    # Default is 101, so by default everyone is shown (since no one's attendance is >= 101%).
+    max_percentage_str = request.GET.get("max_percentage", "101").strip()
 
-    # Convert dates
     try:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
     except ValueError:
         start_date, end_date = None, None
         
-    min_percentage = float(min_percentage_str) if min_percentage_str else 0
+    max_percentage = float(max_percentage_str) if max_percentage_str else 101
 
     processed_students = []
     subject_list = []
@@ -736,7 +835,6 @@ def view_analytics(request):
     if selected_collection and selected_collection in collections:
         students_collection = db[selected_collection]
 
-        # Dynamically get subject list
         try:
             pipeline = [
                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
@@ -744,81 +842,74 @@ def view_analytics(request):
                 {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
             ]
             result = list(students_collection.aggregate(pipeline))
-            subject_list = result[0]['subjects'] if result else []
+            subject_list = sorted(result[0]['subjects']) if result else []
         except Exception as e:
             print("DEBUG >> Subject extraction error:", e)
             subject_list = []
 
-        # Build student query
         query = {}
         if student_name:
             query["name"] = {"$regex": student_name, "$options": "i"}
+        if subject_filter:
+            query[f"subjects.{subject_filter}"] = {"$exists": True}
 
-        students_data = list(students_collection.find(query, {
+        # First, fetch the students from the database
+        students_from_db = list(students_collection.find(query, {
             "_id": 0, "name": 1, "roll_number": 1, "subjects": 1
         }))
+        
+        # FIX 2: Correctly sort the student list numerically in Python
+        students_data = sorted(students_from_db, key=lambda s: int(s.get('roll_number', 0)))
 
         for student in students_data:
             subject_stats = {}
             absent_dates = []
-            subjects_to_check = [subject_filter] if subject_filter else subject_list
+            
+            # This loop now calculates stats for all subjects a student is enrolled in.
+            enrolled_subjects = student.get("subjects", {}).keys()
 
-            for subject in subjects_to_check:
-                subject_stats[subject] = {"present": 0, "total": 0}
-
-            if isinstance(student.get("subjects"), dict):
-                for subject in subjects_to_check:
-                    subject_data = student["subjects"].get(subject, {})
-                    
-                    # Handle both direct dates and nested attendance objects
-                    attendance_records = {}
-                    if isinstance(subject_data, dict):
-                        attendance_records = subject_data
-                    elif isinstance(subject_data.get("attendance"), dict):
-                        attendance_records = subject_data["attendance"]
-                    
-                    for date_str, status in attendance_records.items():
-                        try:
-                            # Parse date in YYYY-MM-DD format
-                            parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                            
-                            if start_date and parsed_date < start_date:
-                                continue
-                            if end_date and parsed_date > end_date:
-                                continue
-                            
-                            # Handle different status formats
-                            statuses = []
-                            if isinstance(status, str):
-                                statuses = [status]
-                            elif isinstance(status, list):
-                                statuses = status
-                            
-                            for s in statuses:
-                                if subject not in subject_stats:
-                                    subject_stats[subject] = {"present": 0, "total": 0}
-                                subject_stats[subject]["total"] += 1
-                                if s == "P":
-                                    subject_stats[subject]["present"] += 1
-                                else:
-                                    absent_dates.append(date_str)  # Store original date string
-                        except (ValueError, AttributeError):
+            for subject in enrolled_subjects:
+                subject_data = student["subjects"].get(subject, {})
+                attendance_records = subject_data if isinstance(subject_data, dict) else {}
+                
+                for date_str, status in attendance_records.items():
+                    try:
+                        parsed_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                        if (start_date and parsed_date < start_date) or \
+                           (end_date and parsed_date > end_date):
                             continue
+                        
+                        statuses = status if isinstance(status, list) else [status]
+                        
+                        for s in statuses:
+                            if subject not in subject_stats:
+                                subject_stats[subject] = {"present": 0, "total": 0}
+                            subject_stats[subject]["total"] += 1
+                            if s == "P":
+                                subject_stats[subject]["present"] += 1
+                            elif s == "A":
+                                absent_dates.append(f"{subject}: {date_str}")
+                    except (ValueError, AttributeError):
+                        continue
 
-            # Calculate percentages
             percentages = {}
-            for subject in subjects_to_check:
-                stats = subject_stats.get(subject, {"present": 0, "total": 0})
+            for subject, stats in subject_stats.items():
                 percentages[subject] = round((stats["present"] / stats["total"] * 100) if stats["total"] > 0 else 0, 2)
 
-            total_classes = sum(stats["total"] for stats in subject_stats.values())
-            attended_classes = sum(stats["present"] for stats in subject_stats.values())
-            overall_percentage = round((attended_classes / total_classes * 100) if total_classes > 0 else 0, 2)
+            # FIX 3: Calculate 'overall_percentage' based on the filter context
+            if subject_filter:
+                # If filtering by a subject, "overall" is just that subject's percentage
+                overall_percentage = percentages.get(subject_filter, 0)
+            else:
+                # Otherwise, it's the average of all enrolled subjects
+                total_classes = sum(stats["total"] for stats in subject_stats.values())
+                attended_classes = sum(stats["present"] for stats in subject_stats.values())
+                overall_percentage = round((attended_classes / total_classes * 100) if total_classes > 0 else 0, 2)
 
-            if overall_percentage < min_percentage:
+            # Use the corrected percentage filter logic
+            if overall_percentage >= max_percentage:
                 continue
 
-            # Prepare student record
             student_data = {
                 "name": student.get("name", "Unknown"),
                 "roll_number": student.get("roll_number", "Unknown"),
@@ -829,14 +920,14 @@ def view_analytics(request):
             if subject_filter:
                 student_data["filtered_subject_percentage"] = percentages.get(subject_filter, 0)
             else:
+                # FIX 4: Show 'N/A' for subjects a student is not enrolled in.
                 student_data["subject_percentages_flat"] = [
-                    {"name": subject, "percent": percentages.get(subject, 0)}
+                    {"name": subject, "percent": percentages.get(subject, "N/A")}
                     for subject in subject_list
                 ]
 
             processed_students.append(student_data)
 
-    # Get session name for greeting
     name = request.session.get('first_name', '').split()
     first_name = name[0] if name else "Guest"
 
@@ -851,9 +942,86 @@ def view_analytics(request):
             "student_name": student_name,
             "start_date": start_date_str,
             "end_date": end_date_str,
-            "min_percentage": min_percentage_str
+            "max_percentage": max_percentage_str if max_percentage_str != "101" else ""
         }
     })
+    
+    
+lab_groups_collection = db["lab_groups"] 
+@custom_login_required
+def manage_groups_view(request):
+    if request.method == 'POST':
+        collection_name = request.POST.get('collection')
+        try:
+            # Get start and end rolls, convert to integers
+            g_a_start = int(request.POST.get('group_a_start', 0))
+            g_a_end = int(request.POST.get('group_a_end', 0))
+            g_b_start = int(request.POST.get('group_b_start', 0))
+            g_b_end = int(request.POST.get('group_b_end', 0))
+
+            # Generate roll lists from ranges (and convert back to strings to match schema)
+            group_a_rolls = [str(r) for r in range(g_a_start, g_a_end + 1)] if g_a_start and g_a_end else []
+            group_b_rolls = [str(r) for r in range(g_b_start, g_b_end + 1)] if g_b_start and g_b_end else []
+
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid roll number. Please enter valid numbers for the ranges.")
+            return redirect('manage_groups')
+
+        if not collection_name:
+            messages.error(request, "Please select a class collection.")
+            return redirect('manage_groups')
+
+        # Check for overlapping roll numbers between the two groups
+        overlap = set(group_a_rolls) & set(group_b_rolls)
+        if overlap:
+            messages.error(request, f"Error: Roll numbers {list(overlap)} are in both group ranges.")
+            return redirect('manage_groups')
+
+        # Save or update the data in MongoDB using upsert
+        lab_groups_collection.update_one(
+            {'collection_name': collection_name},
+            {'$set': {
+                'group_a_rolls': group_a_rolls,
+                'group_b_rolls': group_b_rolls
+            }},
+            upsert=True
+        )
+        messages.success(request, f"Successfully saved lab groups for {collection_name}.")
+        return redirect('manage_groups')
+
+    # For GET request
+    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+    return render(request, 'manage_groups.html', {'collections': sorted(collections)})
+
+
+# API view to fetch existing group data for the form
+@custom_login_required
+def get_group_data_api(request):
+    collection_name = request.GET.get('collection')
+    if not collection_name:
+        return JsonResponse({'error': 'Collection not provided'}, status=400)
+    
+    group_data = lab_groups_collection.find_one({'collection_name': collection_name}, {'_id': 0})
+    
+    response_data = {}
+    
+    # For Group A, find min and max if the list exists
+    if group_data and group_data.get('group_a_rolls'):
+        rolls_as_int = [int(r) for r in group_data['group_a_rolls']]
+        response_data['group_a_start'] = min(rolls_as_int)
+        response_data['group_a_end'] = max(rolls_as_int)
+    
+    # For Group B, find min and max if the list exists
+    if group_data and group_data.get('group_b_rolls'):
+        rolls_as_int = [int(r) for r in group_data['group_b_rolls']]
+        response_data['group_b_start'] = min(rolls_as_int)
+        response_data['group_b_end'] = max(rolls_as_int)
+        
+    return JsonResponse(response_data)
+
+
+
+
 
 
 @custom_login_required
@@ -992,6 +1160,60 @@ def import_collection(request):
             return redirect("index")
 
     return render(request, "import_collection.html", {"message": message})
+
+
+
+# Add this with your other views in views.py
+
+@custom_login_required
+def assign_elective_view(request):
+    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+    
+    if request.method == 'POST':
+        collection_name = request.POST.get('collection')
+        elective_subject_name = request.POST.get('elective_subject').strip()
+        selected_students_rolls = request.POST.getlist('students') # Gets all checked student roll numbers
+
+        if not all([collection_name, elective_subject_name, selected_students_rolls]):
+            messages.error(request, "⚠️ Please select a collection, provide a subject name, and select at least one student.")
+            return redirect('assign_elective')
+
+        try:
+            # The core logic: Update many documents at once
+            # We add the new subject key to the 'subjects' object for students whose roll_number is in the selected list.
+            # We also ensure we don't accidentally overwrite it if it somehow already exists.
+            result = db[collection_name].update_many(
+                {
+                    "roll_number": {"$in": selected_students_rolls},
+                    f"subjects.{elective_subject_name}": {"$exists": False} # Safety check
+                },
+                {
+                    "$set": {f"subjects.{elective_subject_name}": {}} # Initialize with an empty object
+                }
+            )
+            
+            messages.success(request, f"✅ Successfully assigned '{elective_subject_name}' to {result.modified_count} students.")
+            return redirect('index')
+
+        except Exception as e:
+            messages.error(request, f"❌ An error occurred: {e}")
+            return redirect('assign_elective')
+
+    return render(request, 'assign_elective.html', {'collections': sorted(collections)})
+
+
+# API endpoint to fetch students for the selected collection
+@custom_login_required
+def get_students_api(request):
+    collection_name = request.GET.get('collection')
+    if not collection_name:
+        return JsonResponse([], safe=False)
+
+    students = list(db[collection_name].find({}, {"name": 1, "roll_number": 1, "_id": 0}).sort("roll_number", 1))
+    return JsonResponse(students, safe=False)
+
+
+
 @custom_login_required
 def export_collection_page(request):
     years = ["2023-2024", "2024-2025", "2025-2026"]

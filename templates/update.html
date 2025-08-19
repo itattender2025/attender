@@ -1,4 +1,3 @@
-<!-- templates/update.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +9,8 @@
             --primary: #3498db;
             --primary-dark: #2980b9;
             --secondary: #2c3e50;
-            --accent: #1abc9c;
+            --accent: #1abc9c; /* We'll use this for the new card */
+            --accent-dark: #16a085; /* Darker accent for hover */
             --light: #f8f9fa;
             --dark: #343a40;
             --danger: #e74c3c;
@@ -140,6 +140,7 @@
         .option-card:nth-child(2) { animation-delay: 0.2s; }
         .option-card:nth-child(3) { animation-delay: 0.3s; }
         .option-card:nth-child(4) { animation-delay: 0.4s; }
+        .option-card:nth-child(5) { animation-delay: 0.5s; } /* Animation delay for new card */
         
         .option-card:hover {
             transform: translateY(-5px);
@@ -159,6 +160,7 @@
         .delete::before { background: var(--danger); }
         .import::before { background: var(--warning); }
         .export::before { background: var(--primary); }
+        .elective::before { background: var(--accent); } /* Style for new card */
         
         .icon {
             font-size: 3rem;
@@ -190,45 +192,21 @@
             font-size: 1rem;
         }
         
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
         
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-        }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #c0392b; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
         
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
+        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-warning:hover { background-color: #e67e22; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3); }
         
-        .btn-danger:hover {
-            background-color: #c0392b;
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-        }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #27ae60; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3); }
         
-        .btn-warning {
-            background-color: var(--warning);
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background-color: #e67e22;
-            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
-        }
-        
-        .btn-success {
-            background-color: var(--success);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background-color: #27ae60;
-            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
-        }
+        /* New Button Style for Accent Color */
+        .btn-accent { background-color: var(--accent); color: white; }
+        .btn-accent:hover { background-color: var(--accent-dark); box-shadow: 0 4px 12px rgba(26, 188, 156, 0.3); }
         
         /* Footer */
         footer {
@@ -239,34 +217,19 @@
             margin-top: 3rem;
         }
         
-        footer p {
-            margin-bottom: 0.5rem;
-        }
+        footer p { margin-bottom: 0.5rem; }
         
         /* Responsive */
         @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                padding: 1rem;
-            }
-            
-            .nav-links {
-                margin-top: 1rem;
-            }
-            
-            .nav-links a {
-                margin: 0 0.5rem;
-            }
-            
-            .options-grid {
-                grid-template-columns: 1fr;
-            }
+            .navbar { flex-direction: column; padding: 1rem; }
+            .nav-links { margin-top: 1rem; }
+            .nav-links a { margin: 0 0.5rem; }
+            .options-grid { grid-template-columns: 1fr; }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar">
         <a href="{% url 'index' %}" class="logo">
             <i class="fas fa-database"></i>
@@ -274,11 +237,9 @@
         </a>
         <ul class="nav-links">
             <li><a href="{% url 'index' %}"><i class="fas fa-home"></i> Home</a></li>
-            
         </ul>
     </nav>
     
-    <!-- Main Content -->
     <div class="container">
         <div class="header">
             <h1>Data Management Center</h1>
@@ -287,44 +248,49 @@
         
         <div class="options-grid">
             <div class="option-card promote">
-                <div class="icon">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
+                <div class="icon"><i class="fas fa-user-graduate"></i></div>
                 <h3>Promote Students</h3>
                 <p>Advance students to the next academic level or graduation class while preserving their records.</p>
                 <a href="{% url 'promotion_dashboard' %}" class="btn btn-success">Promote Students</a>
             </div>
             
             <div class="option-card delete">
-                <div class="icon">
-                    <i class="fas fa-trash-alt"></i>
-                </div>
+                <div class="icon"><i class="fas fa-trash-alt"></i></div>
                 <h3>Delete Collections</h3>
                 <p>Remove old or unnecessary data collections. This action is irreversible, so use with caution.</p>
                 <a href="{% url 'delete_collections' %}" class="btn btn-danger">Delete Collections</a>
             </div>
             
             <div class="option-card import">
-                <div class="icon">
-                    <i class="fas fa-file-import"></i>
-                </div>
+                <div class="icon"><i class="fas fa-file-import"></i></div>
                 <h3>Import Data</h3>
                 <p>Bring in data from external files or systems. Supports multiple formats including CSV and JSON.</p>
                 <a href="{% url 'import_collection' %}" class="btn btn-warning">Import Data</a>
             </div>
             
             <div class="option-card export">
-                <div class="icon">
-                    <i class="fas fa-file-export"></i>
-                </div>
+                <div class="icon"><i class="fas fa-file-export"></i></div>
                 <h3>Export Data</h3>
                 <p>Save your data to external files for backup or transfer purposes in various formats.</p>
                 <a href="{% url 'export_collection' %}" class="btn btn-primary">Export Data</a>
             </div>
-        </div>
+
+            <div class="option-card elective">
+                <div class="icon"><i class="fas fa-user-check"></i></div>
+                <h3>Assign Elective Subject</h3>
+                <p>Assign an optional or elective subject to a select group of students within a class.</p>
+                <a href="{% url 'assign_elective' %}" class="btn btn-accent">Assign Subject</a>
+            </div>
+            <div class="option-card" style="--card-color: #9b59b6;"> <style>.option-card[style*="#9b59b6"]::before { background: #9b59b6; }</style>
+            <div class="icon"><i class="fas fa-users-cog"></i></div>
+            <h3>Manage Lab Groups</h3>
+            <p>Define Group A and Group B roll numbers for specific classes to take separate lab attendance.</p>
+            <a href="{% url 'manage_groups' %}" class="btn" style="background-color: #9b59b6; color: white;">Manage Groups</a>
+            </div>
+            
+            </div>
     </div>
     
-    <!-- Footer -->
     <footer>
         <p>&copy; 2025 Attendance Management System</p>
         <p><i class="fas fa-envelope"></i> akashmondalofficial007@gmail.com | <i class="fas fa-phone"></i> +91 8336031104</p>

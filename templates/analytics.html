@@ -861,10 +861,15 @@
             
                     <!-- Percentage Filter -->
                     <div class="form-group">
-                        <label for="min_percentage" class="form-label">Min %</label>
-                        <input type="number" id="min_percentage" name="min_percentage" 
-                               min="0" max="100" value="{{ request.GET.min_percentage }}" 
-                               placeholder="0-100" class="modern-input">
+                    <label for="max_percentage">Show Below %</label>
+                    <input type="number" 
+                        name="max_percentage" 
+                        id="max_percentage"
+                        min="0" 
+                        max="100" 
+                        value="{{ filters.max_percentage }}" 
+                        placeholder="0-100" 
+                        class="modern-input">
                     </div>
             
                     <!-- Action Buttons -->
