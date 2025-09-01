@@ -2,7 +2,7 @@ from django.http import HttpResponse, request
 from django.shortcuts import render, redirect
 from datetime import datetime, date, timedelta
 from .models import Student, Attendance, CustomUser, PasswordResetRequest
-
+from urllib.parse import quote 
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
@@ -421,31 +421,122 @@ def logout_view(request):
 
 
 @custom_login_required
+# def take_attendance(request):
+#     name = request.session.get('first_name', '').split()
+#     first_name = name[0] if len(name) > 0 else "Guest"
+
+#     # Get all student collections
+#     collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+
+#     semesters = []
+#     academic_years = []
+
+#     for col in collections:
+#         parts = col.split("_")
+#         if len(parts) >= 4:
+#             sem_part = parts[2]
+#             year_part = parts[3]
+#             for part in parts:
+#                 if part.endswith(("st", "nd", "rd", "th")):
+#                     semesters.append(part)
+#             if "-" in year_part:
+#                 academic_years.append(year_part)
+
+#     semesters = sorted(list(set(semesters)))
+#     academic_years = sorted(list(set(academic_years)))
+
+#     # GET: show attendance.html
+#     selected_sem = request.GET.get("sem")
+#     selected_year = request.GET.get("year")
+#     subject_list = []
+
+#     if selected_sem and selected_year:
+#         collection_name = f"student_it_{selected_sem}_{selected_year}"
+#         if collection_name in collections:
+#             pipeline = [
+#                 {"$project": {"subjects": {"$objectToArray": "$subjects"}}},
+#                 {"$unwind": "$subjects"},
+#                 {"$group": {"_id": None, "subjects": {"$addToSet": "$subjects.k"}}}
+#             ]
+#             result = db[collection_name].aggregate(pipeline)
+#             try:
+#                 subject_list = list(result)[0]['subjects']
+#             except (IndexError, KeyError):
+#                 pass
+
+#     if request.method == "POST":
+#         sem = request.POST.get("sem")
+#         year = request.POST.get("year")
+#         subject = request.POST.get("subject")
+#         date = request.POST.get("date")
+
+#         if sem and year and subject and date:
+#             collection = f"student_it_{sem}_{year}"
+#             return redirect(f'/mark-attendance/?collection={collection}&subject={subject}&date={date}')
+        
+#         else:
+#             messages.error(request, "Please fill all required fields")
+#     overwrite = request.POST.get("overwrite", "off")
+
+
+#     return render(request, 'attendance.html', {
+#         "username": first_name,
+#         "collections": collections,
+#         "today": datetime.today().strftime('%Y-%m-%d'),
+#         "subjects": sorted(subject_list),
+#         "semesters": semesters,
+#         "years": academic_years,
+#         "semester": selected_sem,
+#         "year": selected_year,
+#     })
+
+
+
+@custom_login_required
 def take_attendance(request):
     name = request.session.get('first_name', '').split()
     first_name = name[0] if len(name) > 0 else "Guest"
 
-    # Get all student collections
-    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+    # --- POST request for form submission ---
+    if request.method == "POST":
+        sem = request.POST.get("sem")
+        year = request.POST.get("year")
+        subject = request.POST.get("subject")
+        date = request.POST.get("date")
 
+        if sem and year and subject and date:
+            collection = f"student_it_{sem}_{year}"
+            # URL encode the subject to handle special characters like '&'
+            encoded_subject = quote(subject)
+            return redirect(f'/mark-attendance/?collection={collection}&subject={encoded_subject}&date={date}')
+        
+        else:
+            messages.error(request, "Please fill all required fields")
+            # Redirect back to the GET page to show the error
+            return redirect('take_attendance')
+
+    # --- GET request for both page load and AJAX calls ---
+    
+    # Check if the request is an AJAX request from our JavaScript
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+    collections = [col for col in db.list_collection_names() if col.startswith('student_it_')]
+    
     semesters = []
     academic_years = []
-
     for col in collections:
         parts = col.split("_")
         if len(parts) >= 4:
             sem_part = parts[2]
             year_part = parts[3]
-            for part in parts:
-                if part.endswith(("st", "nd", "rd", "th")):
-                    semesters.append(part)
+            if sem_part.endswith(("st", "nd", "rd", "th")):
+                semesters.append(sem_part)
             if "-" in year_part:
                 academic_years.append(year_part)
 
     semesters = sorted(list(set(semesters)))
     academic_years = sorted(list(set(academic_years)))
 
-    # GET: show attendance.html
     selected_sem = request.GET.get("sem")
     selected_year = request.GET.get("year")
     subject_list = []
@@ -462,33 +553,25 @@ def take_attendance(request):
             try:
                 subject_list = list(result)[0]['subjects']
             except (IndexError, KeyError):
-                pass
+                pass  # subject_list remains empty
 
-    if request.method == "POST":
-        sem = request.POST.get("sem")
-        year = request.POST.get("year")
-        subject = request.POST.get("subject")
-        date = request.POST.get("date")
+    # If it's an AJAX request, return ONLY the subjects as JSON
+    if is_ajax:
+        return JsonResponse({'subjects': sorted(subject_list)})
 
-        if sem and year and subject and date:
-            collection = f"student_it_{sem}_{year}"
-            return redirect(f'/mark-attendance/?collection={collection}&subject={subject}&date={date}')
-        
-        else:
-            messages.error(request, "Please fill all required fields")
-    overwrite = request.POST.get("overwrite", "off")
-
-
+    # Otherwise, for a normal page load, render the full HTML template
     return render(request, 'attendance.html', {
         "username": first_name,
-        "collections": collections,
         "today": datetime.today().strftime('%Y-%m-%d'),
-        "subjects": sorted(subject_list),
+        "subjects": sorted(subject_list), # For initial load if params are in URL
         "semesters": semesters,
         "years": academic_years,
         "semester": selected_sem,
         "year": selected_year,
     })
+
+
+
 # #########################################################################
 
 @custom_login_required
@@ -1045,54 +1128,6 @@ def delete_collections(request):
 
     return render(request, "delete_collections.html")
 
-# from django.core.files.storage import default_storage
-# import os
-# import pandas as pd
-# @custom_login_required
-# def import_collection(request):
-#     message = ""
-#     if request.method == "POST":
-#         dept = request.POST.get("department")
-#         semester = request.POST.get("semester")
-#         academic_year = request.POST.get("academic_year")
-
-#         # Collect all subjects from dynamically generated fields
-#         subject_names = []
-#         for key in request.POST:
-#             if key.startswith("subject_") and request.POST[key].strip():
-#                 subject_names.append(request.POST[key].strip())
-
-#         uploaded_file = request.FILES.get("file")
-#         if uploaded_file:
-#             file_path = default_storage.save(uploaded_file.name, uploaded_file)
-#             abs_path = os.path.join(default_storage.location, file_path)
-
-#             ext = os.path.splitext(file_path)[-1].lower()
-#             df = pd.read_excel(abs_path) if ext == ".xlsx" else pd.read_csv(abs_path)
-
-#             collection_name = f"student_{dept}_{semester}_{academic_year}".lower()
-#             student_collection = db[collection_name]
-
-#             documents = []
-#             for _, row in df.iterrows():
-#                 # Create a dictionary of subjects, each initialized as an empty dict
-#                 subject_data = {subject: {} for subject in subject_names}
-
-#                 doc = {
-#                     "name": str(row["name"]),
-#                     "roll_number": str(row["roll_number"]),
-#                     "current_semester": semester,
-#                     "academic_year": academic_year,
-#                     "subjects": subject_data
-#                 }
-#                 documents.append(doc)
-
-#             student_collection.insert_many(documents)
-#             messages.success(request, "Collection imported successfully!")
-#             return redirect("index")
-
-#     return render(request, "import_collection.html", {"message": message})
-
 from django.core.files.storage import default_storage
 import os
 import pandas as pd
@@ -1176,35 +1211,46 @@ def assign_elective_view(request):
     if request.method == 'POST':
         collection_name = request.POST.get('collection')
         elective_subject_name = request.POST.get('elective_subject').strip()
-        selected_students_rolls = request.POST.getlist('students') # Gets all checked student roll numbers
+        selected_students_rolls = request.POST.getlist('students')
+        
+        # --- Start of Changes ---
+        
+        # 1. Check if the overwrite checkbox was ticked
+        allow_overwrite = request.POST.get('overwrite_subject') == 'true'
 
         if not all([collection_name, elective_subject_name, selected_students_rolls]):
             messages.error(request, "⚠️ Please select a collection, provide a subject name, and select at least one student.")
             return redirect('assign_elective')
 
         try:
-            # The core logic: Update many documents at once
-            # We add the new subject key to the 'subjects' object for students whose roll_number is in the selected list.
-            # We also ensure we don't accidentally overwrite it if it somehow already exists.
+            # 2. Build the filter for the database query
+            query_filter = {
+                "roll_number": {"$in": selected_students_rolls}
+            }
+
+            # 3. If NOT overwriting, add the original safety check
+            if not allow_overwrite:
+                query_filter[f"subjects.{elective_subject_name}"] = {"$exists": False}
+
+            # Now use the dynamically built query_filter
             result = db[collection_name].update_many(
+                query_filter,
                 {
-                    "roll_number": {"$in": selected_students_rolls},
-                    f"subjects.{elective_subject_name}": {"$exists": False} # Safety check
-                },
-                {
-                    "$set": {f"subjects.{elective_subject_name}": {}} # Initialize with an empty object
+                    "$set": {f"subjects.{elective_subject_name}": {}} # Initialize/overwrite with an empty object
                 }
             )
             
-            messages.success(request, f"✅ Successfully assigned '{elective_subject_name}' to {result.modified_count} students.")
+            # Update success message for clarity
+            messages.success(request, f"✅ Successfully assigned/updated '{elective_subject_name}' for {result.modified_count} students.")
             return redirect('index')
+
+        # --- End of Changes ---
 
         except Exception as e:
             messages.error(request, f"❌ An error occurred: {e}")
             return redirect('assign_elective')
 
     return render(request, 'assign_elective.html', {'collections': sorted(collections)})
-
 
 # API endpoint to fetch students for the selected collection
 @custom_login_required
@@ -1326,3 +1372,126 @@ def export_collection(request):
         "selected_sem": selected_sem,
         "selected_year": selected_year
     })
+
+
+
+
+
+
+
+# # your_app/views.py
+
+# from django.shortcuts import render, redirect
+# from django.http import JsonResponse
+# from django.contrib import messages
+# from pymongo import MongoClient
+# import json
+
+# # Assume you have your MongoDB client connection here
+# # client = MongoClient('mongodb://localhost:27017/')
+# # db = client['your_db_name']
+
+# # ... your other views like 'assign_elective' ...
+# from django.shortcuts import render, redirect
+# from django.http import JsonResponse
+# from django.contrib import messages
+
+# # Fetch all students for a collection
+# def get_students_for_collection(request):
+#     """
+#     API endpoint to get all students (name + roll_number) for a given collection.
+#     """
+#     collection_name = request.GET.get('collection')
+#     if not collection_name:
+#         return JsonResponse({'error': 'Collection name not provided'}, status=400)
+
+#     try:
+#         student_collection = db[collection_name]
+#         # Fetch only name and roll_number fields
+#         students = list(student_collection.find({}, {"_id": 0, "name": 1, "roll_number": 1}))
+#         # Sort by roll number (optional but looks nice)
+#         students = sorted(students, key=lambda x: x["roll_number"])
+#         return JsonResponse(students, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+
+# def get_subjects_for_collection(request):
+#     """
+#     API endpoint to get a list of all unique subject keys from the subjects object.
+#     This version is corrected to work with a subjects object instead of an array.
+#     """
+#     collection_name = request.GET.get('collection')
+#     if not collection_name:
+#         return JsonResponse({'error': 'Collection name not provided'}, status=400)
+    
+#     try:
+#         # Use an aggregation pipeline to extract all unique keys from the 'subjects' object
+#         pipeline = [
+#             # 1. Project the subjects field
+#             {'$project': {'subjects': 1}},
+#             # 2. Convert the subjects object to an array of key-value pairs
+#             {'$project': {'subjects_array': {'$objectToArray': '$subjects'}}},
+#             # 3. Deconstruct the array to process each subject individually
+#             {'$unwind': '$subjects_array'},
+#             # 4. Group by the subject key ('k') to get unique subjects
+#             {'$group': {'_id': '$subjects_array.k'}},
+#             # 5. Sort the results alphabetically
+#             {'$sort': {'_id': 1}}
+#         ]
+        
+#         results = list(db[collection_name].aggregate(pipeline))
+#         # Extract the subject names from the aggregation result
+#         subjects = [doc['_id'] for doc in results if doc['_id']]
+        
+#         return JsonResponse(subjects, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+
+# def delete_subject(request):
+#     """
+#     Handles deleting a specific subject from selected students' records.
+#     This version is corrected to work with a subjects object using $unset.
+#     """
+#     try:
+#         collections = db.list_collection_names()
+#     except Exception as e:
+#         messages.error(request, f"Could not connect to the database: {e}")
+#         collections = []
+
+#     if request.method == 'POST':
+#         collection_name = request.POST.get('collection')
+#         subject_to_delete = request.POST.get('subject_to_delete')
+#         student_roll_numbers = request.POST.getlist('students')
+
+#         if not all([collection_name, subject_to_delete, student_roll_numbers]):
+#             messages.error(request, "Missing data. Please select a class, a subject, and at least one student.")
+#             return redirect('delete_subject')
+
+#         updated_count = 0
+#         student_collection = db[collection_name]
+
+#         for roll_number in student_roll_numbers:
+#             # To remove a key from an object, use MongoDB's $unset operator.
+#             # We use dot notation to target the specific key within the subjects object.
+#             update_query = {'$unset': {f'subjects.{subject_to_delete}': ''}}
+            
+#             result = student_collection.update_one(
+#                 {'roll_number': roll_number},
+#                 update_query
+#             )
+            
+#             if result.modified_count > 0:
+#                 updated_count += 1
+        
+#         if updated_count > 0:
+#             messages.success(request, f"Successfully removed '{subject_to_delete}' from {updated_count} student(s).")
+#         else:
+#             messages.warning(request, "No students were updated. They may not have had the selected subject.")
+
+#         return redirect('delete-subject')
+
+#     context = {'collections': collections}
+#     # Assuming your template is in 'your_app/delete_subject.html'
+#     return render(request, 'delete-subject.html', context)

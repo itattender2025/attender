@@ -163,7 +163,10 @@
                     <p id="student-list-placeholder" class="text-muted text-center mt-5">Please select a collection to see the student list.</p>
                 </div>
             </div>
+             {% csrf_token %}
 
+            
+            
             <button type="submit" class="btn-submit"><i class="fas fa-plus-circle"></i> Assign Subject</button>
         </form>
     </div>

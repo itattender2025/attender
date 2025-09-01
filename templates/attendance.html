@@ -3,517 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Subject</title>
+    <title>Take Attendance</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #00F0FF;
-            --primary-dark: #00c7d4;
-            --secondary: rgb(22, 102, 214);
-            --accent: rgb(26, 88, 196);
-            --text: rgb(1, 15, 33);
-            --text-light: rgb(29, 79, 179);
-            --background: #f0fdf9;
-            --card-bg: rgb(255, 255, 255);
-            --border: rgb(8, 150, 232);
-            --radius: 16px;
-        }
+    :root {
+        --primary: #00F0FF;
+        --secondary: rgb(22, 102, 214);
+        --accent: rgb(26, 88, 196);
+        --text: rgb(1, 15, 33);
+        --text-light: rgb(100, 116, 139); /* Softer text for labels */
+        --background: #f0f7fd;
+        --card-bg: rgb(255, 255, 255);
+        --border: rgb(200, 220, 240);
+        --radius: 12px;
+        --shadow-sm: 0 4px 12px rgba(0, 100, 180, 0.08);
+        --shadow-md: 0 8px 24px rgba(0, 100, 180, 0.12);
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    body {
+        background: var(--background);
+        color: var(--text);
+        padding: 20px;
+    }
+    /* --- Navbar Styles --- */
+.navbar {
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 0 5%; /* Use percentage for responsive padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 65px; /* A bit more height for better spacing */
+    border-bottom: 1px solid var(--border);
+}
 
-        body {
-            background: var(--background);
-            padding-top: 80px;
-            min-height: 100vh;
-        }
+.logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--secondary);
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
 
-        /* Modern Navbar */
-        .navbar {
-            background: var(--card-bg);
-            box-shadow: 0 4px 30px rgba(0, 150, 232, 0.15);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 0 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60px;
-        }
+.logo:hover {
+    transform: scale(1.05); /* Slight zoom effect on hover */
+}
 
-        .left-nav {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-        }
+/* Styles the '+' in your logo */
+.logo span {
+    color: var(--primary);
+    font-weight: 800;
+}
 
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--secondary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
+/* --- General Button Styles (for the Home button) --- */
+.btn {
+    padding: 10px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+}
 
-        .logo span {
-            color: var(--primary);
-        }
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
 
-        .nav-links {
-            display: flex;
-            gap: 35px;
-        }
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
 
-        .nav-links a {
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1.1rem;
-            position: relative;
-            transition: all 0.3s ease;
-            padding: 8px 0;
-            white-space: nowrap;
-        }
+/* --- Media Query for Smaller Screens --- */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 20px; /* Adjust padding for mobile */
+    }
 
-        .nav-links a:hover {
-            color: var(--secondary);
-        }
+    .logo {
+        font-size: 1.5rem;
+    }
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            transition: width 0.3s ease;
-            border-radius: 2px;
-        }
+    .btn {
+        padding: 8px 18px;
+        font-size: 0.9rem;
+    }
+    }
+    .container {
+        background: var(--card-bg);
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 40px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border);
+    }
 
-        .nav-links a:hover::after {
-            width: 100%;
-        }
+    h2 {
+        text-align: center;
+        margin-bottom: 35px;
+        color: var(--secondary);
+        font-size: 2.2rem;
+        font-weight: 700;
+    }
 
-        .active {
-            color: var(--secondary) !important;
-            font-weight: 600 !important;
-        }
+    /* --- Form Styling --- */
+    .form-group {
+        margin-bottom: 25px;
+    }
 
-        .active::after {
-            width: 100% !important;
-        }
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        color: var(--text-light);
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
 
-        .nav-buttons {
-            display: flex;
-            gap: 20px;
-        }
+    select, input[type="date"] {
+        width: 100%;
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background-color: #f8fafc;
+        font-size: 1rem;
+        color: var(--text);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        appearance: none; /* Removes default dropdown arrow */
+    }
+    
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 16px 12px;
+    }
 
-        .btn-nav {
-            padding: 10px 24px;
-            border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            text-decoration: none;
-            white-space: nowrap;
-        }
+    select:focus, input[type="date"]:focus {
+        outline: none;
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 3px rgba(22, 102, 214, 0.2);
+    }
+    
+    select:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+        color: var(--text-light);
+    }
 
-        .btn-outline {
-            background: transparent;
-            color: var(--secondary);
-            border: 2px solid var(--secondary);
-        }
+    /* --- Button Styling --- */
+    button[type="submit"] {
+        width: 100%;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 15px;
+    }
 
-        .btn-outline:hover {
-            background: var(--secondary);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(22, 102, 214, 0.2);
-        }
+    button[type="submit"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(22, 102, 214, 0.3);
+    }
+    
+    /* You can add your navbar styles here if needed */
+    .navbar {
+        /* Basic placeholder */
+        width: 100%;
+        height: 60px;
+        background-color: var(--card-bg);
+        box-shadow: var(--shadow-sm);
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 240, 255, 0.3);
-        }
-
-        /* Mobile Menu */
-        .hamburger {
-            display: none;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        .mobile-menu {
-            display: none;
-            position: fixed;
-            top: 80px;
-            left: 0;
-            width: 100%;
-            background: var(--card-bg);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            z-index: 999;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .mobile-menu.active {
-            display: flex;
-        }
-
-        .mobile-menu a {
-            padding: 12px;
-            border-radius: 8px;
-            transition: background 0.3s;
-        }
-
-        .mobile-menu a:hover {
-            background: rgba(22, 102, 214, 0.1);
-        }
-
-        /* Form Container */
-        .container {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: var(--radius);
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 8px 24px rgba(0, 150, 232, 0.15);
-            border: 1px solid var(--border);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            margin: 40px auto;
-        }
-
-        .container:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 32px rgba(0, 150, 232, 0.2);
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2rem;
-            color: var(--secondary);
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        label {
-            font-weight: 600;
-            color: var(--text);
-            font-size: 0.95rem;
-            padding-left: 8px;
-        }
-
-        select, input[type="date"] {
-            padding: 16px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background-color: var(--card-bg);
-            color: var(--text);
-        }
-
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231666D6'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            background-size: 20px;
-        }
-
-        select:focus, input[type="date"]:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.2);
-        }
-
-        button {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: var(--radius);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            margin-top: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-        }
-
-        button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
-            opacity: 0;
-            z-index: -1;
-            transition: opacity 0.4s ease;
-        }
-
-        button:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(22, 102, 214, 0.3);
-        }
-
-        button:hover::before {
-            opacity: 1;
-        }
-
-        button:active {
-            transform: translateY(2px);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .navbar {
-                padding: 0 20px;
-                height: 70px;
-            }
-            
-            .nav-links {
-                gap: 25px;
-            }
-            
-            h2 {
-                font-size: 1.8rem;
-            }
-        }
-
-        @media (max-width: 850px) {
-            .nav-links {
-                display: none;
-            }
-            
-            .hamburger {
-                display: block;
-            }
-            
-            .nav-buttons {
-                display: none;
-            }
-            
-            .mobile-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                margin-top: 10px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 32px 24px;
-                margin: 30px 20px;
-            }
-            
-            h2 {
-                font-size: 1.7rem;
-            }
-            
-            button {
-                padding: 16px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .container {
-                padding: 24px 20px;
-            }
-            
-            h2 {
-                font-size: 1.5rem;
-            }
-        }
-        
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            border-radius: 50px;
-            background: rgba(108, 77, 246, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .user-profile:hover {
-            background: rgba(108, 77, 246, 0.2);
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        }
-
-        .username {
-            font-weight: 600;
-            color: var(--primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 120px;
-        }
-
-        .mobile-menu .user-profile {
-            margin-bottom: 15px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 992px) {
-            .username {
-                max-width: 100px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .user-profile {
-                padding: 6px 12px;
-            }
-            
-            .user-avatar {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-            
-            .username {
-                font-size: 0.95rem;
-                max-width: 80px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .username {
-                display: none;
-            }
-            
-            .mobile-menu .username {
-                display: block;
-                max-width: 100%;
-            }
-        }
-    </style>
+</style>
 </head>
 <body>
-    <!-- Modern Navbar -->
     <nav class="navbar">
-        <div class="left-nav">
-            <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
-            
-            <div class="nav-links">
-                <a href="{% url 'index' %}">Home</a>
-            </div>
-        </div>
-        <div class="nav-buttons">
-        {% if user %}
-            <div class="user-profile">
-                <div class="user-avatar">{{ username|first|upper }}</div>
-                <span class="username">{{ username }}</span>
-            </div>
-            <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
-        {% else %}
-            <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
-            <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
-        {% endif %}
-        </div>
-
-        <div class="hamburger">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 12H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 6H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M3 18H21" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </div>
+        <a href="{% url 'index' %}" class="logo">Attender<span>+</span></a>
+        <a href="{% url 'index' %}" class="btn btn-secondary">Home</a>
     </nav>
-    
-    <!-- Mobile Menu -->
-    {% if user %}
     <div class="mobile-menu" id="mobileMenu">
-        <div class="user-profile">
-            <div class="user-avatar">{{ username|first|upper }}</div>
-            <span class="username">{{ username }}</span>
         </div>
-        <a href="{% url 'logout' %}" class="btn-nav btn-primary">Logout</a>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn-nav btn-outline">Login</a>
-        <a href="{% url 'signup' %}" class="btn-nav btn-primary">Signup</a>
-    {% endif %}
-    </div>
-
-    <!-- Form Container -->
-    <!-- Previous head and navbar code remains the same -->
 
     <div class="container">
         <h2>Take Attendance</h2>
         <form id="attendanceForm" method="POST" action="">
             {% csrf_token %}
+            
             <div class="form-group">
                 <label for="year">Academic Year</label>
-                <select id="year" name="year" class="dynamic-select" required>
+                <select id="year" name="year" required>
                     <option value="">-- Select Year --</option>
-                    {% for year in years %}
-                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                    {% for year_opt in years %}
+                    <option value="{{ year_opt }}" {% if year == year_opt %}selected{% endif %}>{{ year_opt }}</option>
                     {% endfor %}
                 </select>
             </div>
     
             <div class="form-group">
                 <label for="sem">Semester</label>
-                <select id="sem" name="sem" class="dynamic-select" required>
+                <select id="sem" name="sem" required>
                     <option value="">-- Select Semester --</option>
-                    {% for sem in semesters %}
-                    <option value="{{ sem }}" {% if selected_sem == sem %}selected{% endif %}>{{ sem }}</option>
+                    {% for sem_opt in semesters %}
+                    <option value="{{ sem_opt }}" {% if semester == sem_opt %}selected{% endif %}>{{ sem_opt }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -522,11 +242,9 @@
                 <label for="subject">Subject</label>
                 <select id="subject" name="subject" required {% if not subjects %}disabled{% endif %}>
                     <option value="">-- Select Subject --</option>
-                    {% if subjects %}
-                        {% for subject in subjects %}
-                        <option value="{{ subject }}">{{ subject }}</option>
-                        {% endfor %}
-                    {% endif %}
+                    {% for subject_opt in subjects %}
+                    <option value="{{ subject_opt }}">{{ subject_opt }}</option>
+                    {% endfor %}
                 </select>
             </div>
             
@@ -535,7 +253,7 @@
                 <input type="date" id="date" name="date" value="{{ today }}" required>
             </div>
             
-            <button type="submit" class="btn-primary">
+            <button type="submit">
                 Continue to Attendance <span style="margin-left: 8px;">→</span>
             </button>
         </form>
@@ -543,69 +261,62 @@
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Set today's date if not set
-        const dateField = document.getElementById('date');
-        if (dateField && !dateField.value) {
-            const today = new Date().toISOString().split('T')[0];
-            dateField.value = today;
-        }
-    
-        // Dynamic subject loading
         const yearSelect = document.getElementById('year');
         const semSelect = document.getElementById('sem');
         const subjectSelect = document.getElementById('subject');
-        const form = document.getElementById('attendanceForm');
     
-        function loadSubjects() {
+        function updateSubjects() {
             const year = yearSelect.value;
             const sem = semSelect.value;
             
+            // 1. Reset subject dropdown if year or semester is not selected
             if (!year || !sem) {
-                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                subjectSelect.innerHTML = '<option value="">-- Select Year & Semester --</option>';
                 subjectSelect.disabled = true;
                 return;
             }
     
-            // Show loading state
-            subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+            // 2. Show a loading state
+            subjectSelect.innerHTML = '<option value="">Loading...</option>';
             subjectSelect.disabled = true;
     
-            // AJAX request to get subjects
-            fetch(`/take-attendance/?sem=${sem}&year=${year}`)
-                .then(response => response.text())
-                .then(html => {
-                    // Create a temporary DOM parser to extract the subjects
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const subjectOptions = doc.querySelectorAll('#subject option');
-                    
-                    // Update subject select
-                    subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-                    subjectOptions.forEach(option => {
-                        if (option.value) {  // Skip the default empty option
-                            subjectSelect.appendChild(option.cloneNode(true));
-                        }
+            // 3. Fetch ONLY the JSON data from the backend
+            fetch(`?sem=${sem}&year=${year}`, {
+                method: 'GET',
+                headers: {
+                    // This header tells our Django view it's an AJAX request
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.json()) // Expect a JSON response
+            .then(data => {
+                // 4. Populate the dropdown with the received data
+                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                
+                if (data.subjects && data.subjects.length > 0) {
+                    data.subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject;
+                        option.textContent = subject;
+                        subjectSelect.appendChild(option);
                     });
-                    
                     subjectSelect.disabled = false;
-                })
-                .catch(error => {
-                    console.error('Error loading subjects:', error);
-                    subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
-                });
+                } else {
+                    subjectSelect.innerHTML = '<option value="">-- No Subjects Found --</option>';
+                    subjectSelect.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching subjects:', error);
+                subjectSelect.innerHTML = '<option value="">-- Error Loading --</option>';
+                subjectSelect.disabled = true;
+            });
         }
     
-        // Event listeners for dynamic loading
-        yearSelect.addEventListener('change', loadSubjects);
-        semSelect.addEventListener('change', loadSubjects);
-    
-        // Initial load if year and sem are already selected
-        if (yearSelect.value && semSelect.value) {
-            loadSubjects();
-        }
+        // Add event listeners to trigger the update
+        yearSelect.addEventListener('change', updateSubjects);
+        semSelect.addEventListener('change', updateSubjects);
     });
     </script>
-
-<!-- Rest of your HTML remains the same -->
 </body>
 </html>

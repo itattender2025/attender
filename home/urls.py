@@ -35,5 +35,11 @@ urlpatterns = [
     path('api/get-students-for-collection/', views.get_students_api, name='get_students_api'), # API endpoint for interactivity
     path('manage-groups/', views.manage_groups_view, name='manage_groups'),
     path('api/get-group-data/', views.get_group_data_api, name='get_group_data_api'),
+    # path('delete-subject/', views.delete_subject, name='delete_subject'),
+
+    # # API endpoints
+    # path('api/get-students-for-collection/', views.get_students_for_collection, name='get_students_for_collection'),
+    # path('api/get-subjects-for-collection/', views.get_subjects_for_collection, name='get_subjects_for_collection'),
+
 
     ]
