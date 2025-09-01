@@ -489,81 +489,7 @@ def take_attendance(request):
         "semester": selected_sem,
         "year": selected_year,
     })
-
-# @custom_login_required
-# def mark_attendance(request):
-#     if request.method == "POST":
-#         # Saving attendance logic
-#         collection_name = request.POST.get("collection")
-#         subject = request.POST.get("subject")
-#         date = request.POST.get("date")
-#         overwrite = request.POST.get("overwrite", "off")  # Get overwrite value
-
-#         all_students = request.POST.getlist("all_students")
-#         present_students = request.POST.getlist("present_students")
-
-#         print('all_students:', all_students, 'present_students:', present_students,
-#               'collection_name:', collection_name, 'subject:', subject,
-#               'date:', date, 'overwrite:', overwrite, 'request.POST:', request.POST)
-
-#         if not (collection_name and subject and date and all_students):
-#             return HttpResponse("Missing required fields in POST request!", status=400)
-
-#         try:
-#             students_collection = db[collection_name]
-
-#             for roll in all_students:
-#                 status = "P" if roll in present_students else "A"
-
-#                 update_query = (
-#                     {"$set": {f"subjects.{subject}.{date}": [status]}} if overwrite == "on"
-#                     else {"$push": {f"subjects.{subject}.{date}": status}}
-#                 )
-
-#                 students_collection.update_one(
-#                     {"roll_number": roll},
-#                     update_query
-#                 )
-
-#             messages.success(request, "Attendance saved successfully!")
-#             return redirect("index")
-
-#         except Exception as e:
-#             return HttpResponse(f"Error saving attendance: {str(e)}", status=500)
-
-#     elif request.method == "GET":
-#         # Loading the form to mark attendance
-#         overwrite = request.GET.get("overwrite", "off")
-
-#         collection_name = request.GET.get("collection")
-#         subject = request.GET.get("subject")
-#         date = request.GET.get("date")
-#         if not (collection_name and subject and date):
-#             return HttpResponse("Missing required parameters!", status=400)
-
-#         try:
-#             students_collection = db[collection_name]
-#             students = list(students_collection.find({}, {"_id": 0}))
-
-#             available_subjects = []
-#             if students:
-#                 available_subjects = list(students[0].get('subjects', {}).keys())
-
-#         except Exception as e:
-#             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
-
-#         name = request.session.get('first_name', '').split()
-#         first_name = name[0] if len(name) > 0 else "Guest"
-
-#         return render(request, "mark_attendance.html", {
-#             "students": students,
-#             "subject": subject,
-#             "date": date,
-#             "collection": collection_name,
-#             "available_subjects": available_subjects,
-#             "username": first_name,
-#             "overwrite": overwrite  # Pass to template if needed
-#         })
+# #########################################################################
 
 @custom_login_required
 def mark_attendance(request):
@@ -629,9 +555,12 @@ def mark_attendance(request):
                     # If group is selected but no rolls are defined, show no one.
                     query["roll_number"] = {"$in": []} 
             # --- END OF NEW LOGIC ---
-
-            students = list(students_collection.find(query, {"_id": 0}))
+            # 1. Fetch students from MongoDB
+            students_list = list(students_collection.find(query, {"_id": 0}))
             
+            # 2. Sort the list in Python based on roll_number as an integer ✨
+            students = sorted(students_list, key=lambda s: int(s.get('roll_number', 0)))
+
         except Exception as e:
             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
 
