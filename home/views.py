@@ -592,12 +592,18 @@ def mark_attendance(request):
         try:
             students_collection = db[collection_name]
             for roll in all_students:
+                # Convert roll number to integer to match database schema
+                try:
+                    roll_int = int(roll)
+                except (ValueError, TypeError):
+                    continue  # Skip invalid roll numbers
+                
                 status = "P" if roll in present_students else "A"
                 update_query = (
                     {"$set": {f"subjects.{subject}.{date}": [status]}} if overwrite == "on"
                     else {"$push": {f"subjects.{subject}.{date}": status}}
                 )
-                students_collection.update_one({"roll_number": roll}, update_query)
+                students_collection.update_one({"roll_number": roll_int}, update_query)
             messages.success(request, "Attendance saved successfully!")
             return redirect("index")
 
@@ -641,8 +647,8 @@ def mark_attendance(request):
             # 1. Fetch students from MongoDB
             students_list = list(students_collection.find(query, {"_id": 0}))
             
-            # 2. Sort the list in Python based on roll_number as an integer ✨
-            students = sorted(students_list, key=lambda s: int(s.get('roll_number', 0)))
+            # 2. Sort the list in Python based on roll_number (already an integer in DB)
+            students = sorted(students_list, key=lambda s: s.get('roll_number', 0))
 
         except Exception as e:
             return HttpResponse(f"Error fetching students: {str(e)}", status=500)
@@ -873,8 +879,8 @@ def view_analytics(request):
             "_id": 0, "name": 1, "roll_number": 1, "subjects": 1
         }))
         
-        # FIX 2: Correctly sort the student list numerically in Python
-        students_data = sorted(students_from_db, key=lambda s: int(s.get('roll_number', 0)))
+        # FIX 2: Correctly sort the student list numerically (roll_number is already int in DB)
+        students_data = sorted(students_from_db, key=lambda s: s.get('roll_number', 0))
 
         for student in students_data:
             subject_stats = {}
@@ -974,9 +980,9 @@ def manage_groups_view(request):
             g_b_start = int(request.POST.get('group_b_start', 0))
             g_b_end = int(request.POST.get('group_b_end', 0))
 
-            # Generate roll lists from ranges (and convert back to strings to match schema)
-            group_a_rolls = [str(r) for r in range(g_a_start, g_a_end + 1)] if g_a_start and g_a_end else []
-            group_b_rolls = [str(r) for r in range(g_b_start, g_b_end + 1)] if g_b_start and g_b_end else []
+            # Generate roll lists from ranges (store as integers to match schema)
+            group_a_rolls = list(range(g_a_start, g_a_end + 1)) if g_a_start and g_a_end else []
+            group_b_rolls = list(range(g_b_start, g_b_end + 1)) if g_b_start and g_b_end else []
 
         except (ValueError, TypeError):
             messages.error(request, "Invalid roll number. Please enter valid numbers for the ranges.")
@@ -1154,27 +1160,41 @@ def import_collection(request):
             df = pd.read_excel(abs_path) if ext == ".xlsx" else pd.read_csv(abs_path)
 
             # ##################################################
-            # ##          NEW SORTING LOGIC ADDED HERE        ##
+            # ##    DATA TYPE CONVERSION AND SORTING LOGIC    ##
             # ##################################################
             try:
-                # 1. Convert 'roll_number' to a numeric type for correct sorting.
+                # 1. Ensure 'name' column exists and convert to string
+                if 'name' not in df.columns:
+                    messages.error(request, "The uploaded file must contain a 'name' column.")
+                    return render(request, "import_collection.html", {"message": message})
+                
+                # 2. Convert 'name' to string type (handles numeric names, NaN, etc.)
+                df['name'] = df['name'].astype(str).str.strip()
+                
+                # 3. Remove rows with empty or invalid names
+                df = df[df['name'].notna() & (df['name'] != '') & (df['name'] != 'nan')]
+
+                # 4. Convert 'roll_number' to a numeric type for correct sorting.
                 #    'coerce' will turn any non-numeric values into NaN (Not a Number).
                 df['roll_number'] = pd.to_numeric(df['roll_number'], errors='coerce')
 
-                # 2. Remove any rows that had invalid roll numbers.
+                # 5. Remove any rows that had invalid roll numbers.
                 df.dropna(subset=['roll_number'], inplace=True)
 
-                # 3. Convert the column to integer type.
+                # 6. Convert the column to integer type.
                 df['roll_number'] = df['roll_number'].astype(int)
 
-                # 4. Sort the entire DataFrame by the 'roll_number' column.
+                # 7. Sort the entire DataFrame by the 'roll_number' column.
                 df.sort_values(by='roll_number', inplace=True)
 
-            except KeyError:
-                messages.error(request, "The uploaded file must contain a 'roll_number' column.")
+            except KeyError as e:
+                messages.error(request, f"The uploaded file is missing required column: {str(e)}")
+                return render(request, "import_collection.html", {"message": message})
+            except Exception as e:
+                messages.error(request, f"Error processing file: {str(e)}")
                 return render(request, "import_collection.html", {"message": message})
             # ##################################################
-            # ##              END OF NEW LOGIC                ##
+            # ##              END OF DATA CONVERSION          ##
             # ##################################################
 
             collection_name = f"student_{dept}_{semester}_{academic_year}".lower()
@@ -1185,11 +1205,8 @@ def import_collection(request):
                 subject_data = {subject: {} for subject in subject_names}
 
                 doc = {
-                    "name": str(row["name"]),
-                    # The roll_number is now a number, but we convert back to string
-                    # to match the schema we fixed earlier. If you changed your DB
-                    # to use numbers, you can remove str().
-                    "roll_number": str(row["roll_number"]),
+                    "name": str(row["name"]),  # Explicitly convert to string
+                    "roll_number": int(row["roll_number"]),  # Store as integer
                     "current_semester": semester,
                     "academic_year": academic_year,
                     "subjects": subject_data
@@ -1223,9 +1240,17 @@ def assign_elective_view(request):
             return redirect('assign_elective')
 
         try:
+            # Convert roll numbers to integers to match database schema
+            selected_students_rolls_int = []
+            for roll in selected_students_rolls:
+                try:
+                    selected_students_rolls_int.append(int(roll))
+                except (ValueError, TypeError):
+                    continue  # Skip invalid roll numbers
+            
             # 2. Build the filter for the database query
             query_filter = {
-                "roll_number": {"$in": selected_students_rolls}
+                "roll_number": {"$in": selected_students_rolls_int}
             }
 
             # 3. If NOT overwriting, add the original safety check
