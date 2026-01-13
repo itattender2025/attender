@@ -11,12 +11,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
-
 from urllib.parse import quote_plus
-
-
 import os
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 import requests
 from requests.auth import HTTPDigestAuth
@@ -27,8 +27,7 @@ from requests.adapters import HTTPAdapter
 
 
 
-username = quote_plus("it24akashmondal")
-password = quote_plus("akashmondal@2004")
+# MongoDB credentials now loaded from environment variables
 
 
 
@@ -45,10 +44,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9mx3q)5e5e&s5z2dp!&dr6l7=caqtpm82+)g#0*#7+*cf=$!dh'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-fallback-key-change-this')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 #to handle our ssl problem 
 
 import requests
@@ -133,32 +132,21 @@ import ssl
 from pymongo import MongoClient
 import urllib.parse
 
-# Dummy DATABASES entry (required for Django)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Dummy DATABASES entry (required by Django)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Dummy SQLite DB (Django requires this)
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),  # Use SQLite to bypass Django DB check
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
-# Fetch credentials from environment variables
-MONGO_USERNAME = "it24akashmondal"
-MONGO_PASSWORD = "akashmondal@2004"
+# MongoDB connection is now handled by home.db module
+# Import it when needed to avoid circular imports
+from home.db import get_mongo_client, get_db
 
-if not MONGO_USERNAME or not MONGO_PASSWORD:
-    raise ValueError("MongoDB credentials are missing! Set MONGO_USERNAME and MONGO_PASSWORD as environment variables.")
-
-# Encode username & password for MongoDB connection
-username = urllib.parse.quote_plus(MONGO_USERNAME)
-password = urllib.parse.quote_plus(MONGO_PASSWORD)
-
-# MongoDB connection string
-MONGO_URI = f"mongodb+srv://{username}:{password}@cluster007.qhfdiks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0077"
-
-# Connect to MongoDB
-client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True)
-db = client["attender_db"]
+# Make client and db available as settings attributes for backward compatibility
+client = get_mongo_client()
+db = get_db()
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -250,7 +238,7 @@ SESSION_COOKIE_NAME = "sessionid"  # Default session cookie name
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'akashincode@gmail.com'  # ✅ replace with your Gmail
-EMAIL_HOST_PASSWORD = 'shhcptofonbjbhcw'  # ✅ your 16-digit App Password
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

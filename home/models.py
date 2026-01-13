@@ -81,19 +81,17 @@ from django.core.mail import send_mail
 from django.conf import settings
 from urllib.parse import quote_plus
 import pymongo
-# Connect to MongoDB Atlas
+import os
 
-username = quote_plus("it24akashmondal")
-password = quote_plus("akashmondal@2004")
+# Use centralized database connection
+from .db import get_mongo_client, get_db, get_students_collection, get_users_collection, get_password_reset_collection
 
-
-
-client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.oznj7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
-db = client["attender_db"]
-students_collection = db["student_it_2nd_year"]  # Collection where student records are stored
-
-users_collection = db["home_user"]
-password_reset_collection = db["home_passwordresetrequest"]
+# Get database connections
+client = get_mongo_client()
+db = get_db()
+students_collection = get_students_collection()
+users_collection = get_users_collection()
+password_reset_collection = get_password_reset_collection()
 
 
 

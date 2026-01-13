@@ -29,17 +29,17 @@ from datetime import datetime, timezone
 
 
 from .mongo_utils import get_db_connection, get_all_student_collections, create_new_collection
+import os
 
-username = quote_plus("it24akashmondal")
-password = quote_plus("akashmondal@2004")
+# Use centralized database connection
+from .db import get_mongo_client, get_db, get_students_collection, get_users_collection, get_password_reset_collection
 
-
-
-client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster007.qhfdiks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster007")
-db = client["attender_db"]
-students_collection = db["student_it_2nd_year"]  # Collection where student records are stored
-users_collection = db["home_user"]
-password_reset_collection = db["home_passwordresetrequest"]
+# Get database connections
+client = get_mongo_client()
+db = get_db()
+students_collection = get_students_collection()
+users_collection = get_users_collection()
+password_reset_collection = get_password_reset_collection()
 
 
 
@@ -968,7 +968,8 @@ def view_analytics(request):
     })
     
     
-lab_groups_collection = db["lab_groups"] 
+from .db import get_lab_groups_collection
+lab_groups_collection = get_lab_groups_collection() 
 @custom_login_required
 def manage_groups_view(request):
     if request.method == 'POST':
